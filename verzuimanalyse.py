@@ -15,3 +15,4 @@ def genereer_grafiek(data):
     ax.bar(["Intern", "Benchmark"], [data.get("verzuimpercentage", 0), data.get("cbs_benchmark", {}).get("waarde", 0)])
     ax.set_title("Verzuim vs Benchmark")
     return fig
+

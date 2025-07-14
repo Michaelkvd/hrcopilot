@@ -35,17 +35,47 @@ BRONNEN_INFO = {
 
 def extract_text_from_input(
     file: Optional[UploadFile] = None,
-    input_text: Optional[str] = None
+    input_text: Optional[str] = None,
 ) -> str:
     if input_text and len(input_text) > 20:
         return input_text
-    if file:
-        if file.filename.endswith((".pdf", ".docx", ".doc", ".txt", ".eml")):
-            try:
-                return file.file.read().decode("utf-8", errors="ignore")
-            except Exception:
-                return ""
-    return ""
+
+    if not file:
+        return ""
+
+    name = file.filename.lower()
+
+    try:
+        if name.endswith(".pdf"):
+            from PyPDF2 import PdfReader
+
+            reader = PdfReader(file.file)
+            text = "".join(page.extract_text() or "" for page in reader.pages)
+            file.file.seek(0)
+            return text
+        if name.endswith((".docx", ".doc")):
+            from docx import Document
+
+            document = Document(file.file)
+            text = "\n".join(p.text for p in document.paragraphs)
+            file.file.seek(0)
+            return text
+        if name.endswith(".eml"):
+            from email import policy
+            from email.parser import BytesParser
+
+            msg = BytesParser(policy=policy.default).parse(file.file)
+            file.file.seek(0)
+            body = msg.get_body(preferencelist=("plain",))
+            return body.get_content() if body else ""
+
+        # Fallback: treat as plain text
+        text = file.file.read().decode("utf-8", errors="ignore")
+        file.file.seek(0)
+        return text
+    except Exception:
+        file.file.seek(0)
+        return ""
 
 def flexibele_begrippenherkenning(text: str) -> Tuple[list, list]:
     gevonden_kernwoorden = [word for word in KEYWORDS if word.lower() in text.lower()]

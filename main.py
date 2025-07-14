@@ -7,10 +7,12 @@ app = FastAPI()
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
-    result = analyse_verzuim(file)
+    contents = await file.read()
+    result = analyse_verzuim(file.filename, contents)
     return JSONResponse(content=result)
 
 @app.post("/legalcheck/")
 async def upload_legal(file: UploadFile = File(...)):
-    result = legalcheck(file)
+    contents = await file.read()
+    result = legalcheck(file=file, input_text=contents.decode("utf-8", errors="ignore"))
     return JSONResponse(content=result)
