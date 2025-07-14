@@ -15,6 +15,8 @@ def test_upload_route_returns_analysis_dict(tmp_path):
     assert data["filename"] == "dummy.txt"
     assert data["sbi_code"] == "6420"
     assert "KW" in data["periode"]
+    assert "risico" in data
+    assert "advies" in data
     assert data["resultaat"] == "Analyse nog niet geïmplementeerd"
 
 
@@ -29,7 +31,16 @@ def test_batch_upload_returns_list_of_dicts(tmp_path):
     assert isinstance(data, list)
     assert len(data) == 2
     for item in data:
-        assert set(item) == {"filename", "sbi_code", "periode", "resultaat"}
+        assert {
+            "filename",
+            "sbi_code",
+            "periode",
+            "resultaat",
+            "risico",
+            "advies",
+            "verzuimpercentage",
+            "cbs_benchmark",
+        }.issubset(item.keys())
 
 
 def test_legalcheck_route_with_keywords(tmp_path):

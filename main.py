@@ -2,7 +2,12 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 
-from verzuimanalyse import analyse_verzuim, analyse_meerdere
+from verzuimanalyse import (
+    analyse_verzuim,
+    analyse_meerdere,
+    bepaal_risico,
+    genereer_aanbevelingen,
+)
 from legalcheck import legalcheck
 
 app = FastAPI()
