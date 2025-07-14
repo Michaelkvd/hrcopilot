@@ -4,7 +4,8 @@ Deze FastAPI-module ondersteunt:
 - Upload van verzuimdocumenten
 - Analyse met benchmark, risiconiveau en aanbevelingen
 - PDF-rapportgeneratie uit markdown
-- Batchverwerking van meerdere bestanden
+- Batchverwerking van meerdere bestanden via `/batch_upload/`
+- Verkorte tekstanalyse via `/analyse_text/`
 - Grafiekoutput als PNG.
 
 ## Starten
