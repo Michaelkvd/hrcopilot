@@ -7,3 +7,4 @@ python-pptx
 openpyxl
 weasyprint
 matplotlib
+python-multipart
