@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Iterable, List, Tuple
+import random
 
 
 def get_latest_cbs_quarter() -> str:
@@ -27,21 +28,84 @@ def get_latest_cbs_quarter() -> str:
     return f"{year}KW{quarter - 1}"
 
 
+def bepaal_risico(verzuimpercentage: float) -> str:
+    """Classificeer het verzuimrisico op basis van het percentage."""
+
+    if verzuimpercentage > 5:
+        return "hoog"
+    if verzuimpercentage < 3:
+        return "laag"
+    return "matig"
+
+
+def genereer_aanbevelingen(risico: str) -> str:
+    """Geeft beknopte vervolgstappen voor het opgegeven risiconiveau."""
+
+    if risico == "laag":
+        return (
+            "Het risico is laag. Blijf periodiek de cijfers monitoren en houd"
+            " contact met medewerkers over eventueel beginnende klachten."
+        )
+
+    opties_matig = [
+        "Voer een verdiepend onderzoek uit naar frequente verzuimoorzaken",
+        "Plan individuele verzuimgesprekken om knelpunten te achterhalen",
+        "Inventariseer mogelijkheden voor preventief gezondheidsbeleid",
+    ]
+    opties_hoog = [
+        "Start een intensief re-integratietraject met betrokkenheid van de bedrijfsarts",
+        "Stel een concreet actieplan op om langdurig verzuim terug te dringen",
+        "Onderzoek aanvullende ondersteuning zoals arbeidsdeskundig advies",
+    ]
+
+    random.seed(risico)
+    keuzes = opties_matig if risico == "matig" else opties_hoog
+    adviezen = "; ".join(random.sample(keuzes, k=2))
+    return f"Mogelijke vervolgstappen: {adviezen}"
+
+
+def haal_cbs_benchmark(periode: str | None = None) -> dict:
+    """Simuleer een CBS benchmark voor SBI-codes 6420 en 6622."""
+
+    if periode is None:
+        periode = get_latest_cbs_quarter()
+
+    # Placeholder waarde, in een echte implementatie zou data via een API
+    # van het CBS worden opgehaald.
+    return {
+        "sbi_codes": ["6420", "6622"],
+        "periode": periode,
+        "waarde": 4.0,
+    }
+
+
 def analyse_verzuim(
     filename: str,
     contents: bytes,
     sbi_code: str = "6420",
     periode: str | None = None,
 ) -> dict:
-    """Analyse a single file and return placeholder data."""
+    """Analyse a single file and return placeholder data with risk advice."""
 
     if periode is None:
         periode = get_latest_cbs_quarter()
+
+    # Placeholder berekening van het verzuimpercentage op basis van de
+    # bestandslengte zodat de uitkomst deterministisch is in tests.
+    verzuimpercentage = round(2 + (len(contents) % 8) * 0.5, 2)
+
+    cbs_benchmark = haal_cbs_benchmark(periode)
+    risico = bepaal_risico(verzuimpercentage)
+    advies = genereer_aanbevelingen(risico)
 
     return {
         "filename": filename,
         "sbi_code": sbi_code,
         "periode": periode,
+        "verzuimpercentage": verzuimpercentage,
+        "cbs_benchmark": cbs_benchmark,
+        "risico": risico,
+        "advies": advies,
         "resultaat": "Analyse nog niet geïmplementeerd",
     }
 
