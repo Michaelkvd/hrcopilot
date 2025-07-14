@@ -1,12 +1,15 @@
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from typing import List, Optional
+from io import BytesIO
 
 from verzuimanalyse import (
     analyse_verzuim,
     analyse_meerdere,
     bepaal_risico,
     genereer_aanbevelingen,
+    genereer_pdf,
+    genereer_grafiek,
 )
 from legalcheck import legalcheck
 
@@ -14,11 +17,32 @@ app = FastAPI()
 
 @app.post("/upload/")
 async def upload_file(
-    file: UploadFile = File(...), periode: Optional[str] = None
+    file: UploadFile = File(...),
+    periode: Optional[str] = None,
+    formaat: Optional[str] = "json",
 ):
     contents = await file.read()
     file.file.seek(0)
     result = analyse_verzuim(file.filename, contents, periode=periode)
+    if formaat == "pdf":
+        markdown = (
+            f"# Verzuimrapport\n"
+            f"**Bestand:** {result['filename']}\n"
+            f"**SBI-code:** {result['sbi_code']}\n"
+            f"**Periode:** {result['periode']}\n"
+            f"**Verzuimpercentage:** {result['verzuimpercentage']}\n"
+            f"**Benchmark:** {result['cbs_benchmark']['waarde']}\n"
+            f"**Risico:** {result['risico']}\n"
+            f"**Advies:** {result['advies']}\n"
+        )
+        pdf_data = genereer_pdf(markdown)
+        return StreamingResponse(BytesIO(pdf_data), media_type="application/pdf")
+    if formaat == "grafiek":
+        fig = genereer_grafiek(result)
+        buf = BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        return StreamingResponse(buf, media_type="image/png")
     return JSONResponse(content=result)
 
 

@@ -15,7 +15,9 @@ Deze repository bevat een kleine FastAPI-applicatie die HR-processen ondersteunt
 
 De API definieert twee endpoints in `main.py`:
 
-- `POST /upload/` – verzuimanalyse van een enkel bestand.
+- `POST /upload/` – verzuimanalyse van een enkel bestand. Gebruik de query
+  parameter `formaat=pdf` of `formaat=grafiek` om respectievelijk een PDF-rapport
+  of PNG-grafiek te ontvangen.
 - `POST /legalcheck/` – juridische analyse van een bestand of tekst.
 
 ## Installatie en starten
