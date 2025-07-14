@@ -105,7 +105,6 @@ def generate_legal_advice(
 
     # Dynamisch actieplan
     actieplan = "Een mogelijk vervolgtraject bestaat uit:\n"
-"
     stappen = []
     stappen.append("• Leg alle communicatie en acties volledig vast in het dossier.")
     if complexiteit == "complex":
