@@ -10,6 +10,7 @@ app = FastAPI()
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
     contents = await file.read()
+    file.file.seek(0)
     result = analyse_verzuim(file.filename, contents)
     return JSONResponse(content=result)
 
