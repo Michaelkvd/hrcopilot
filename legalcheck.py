@@ -104,7 +104,7 @@ def generate_legal_advice(
         advies += f"Neem aanvullend het interne beleid in acht: {intern_beleid} "
 
     # Dynamisch actieplan
-    actieplan = "Een mogelijk vervolgtraject bestaat uit:
+    actieplan = "Een mogelijk vervolgtraject bestaat uit:\n"
 "
     stappen = []
     stappen.append("• Leg alle communicatie en acties volledig vast in het dossier.")
