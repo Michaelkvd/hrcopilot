@@ -1,8 +1,17 @@
 def analyse_verzuim(filename, contents, sbi_code='6420', periode='2025KW2'):
     return {}
 
-def analyse_meerdere(files):
-    return []
+
+async def analyse_meerdere(files):
+    results = []
+    for file in files:
+        try:
+            contents = await file.read()
+            result = analyse_verzuim(file.filename, contents)
+        except Exception as exc:
+            result = {"filename": getattr(file, "filename", "unknown"), "error": str(exc)}
+        results.append(result)
+    return results
 
 def genereer_pdf(markdown):
     from weasyprint import HTML

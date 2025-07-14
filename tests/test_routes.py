@@ -20,3 +20,15 @@ def test_legalcheck_route_with_keywords(tmp_path):
     assert "ontslag" in data["herkenning_kernwoorden"]
     assert "verzuim" in data["herkenning_kernwoorden"]
     assert data["legal_markdown"].startswith("## Juridische Analyse")
+
+
+def test_batch_upload_route(tmp_path):
+    files = [
+        ("files", ("file1.txt", b"content1", "text/plain")),
+        ("files", ("file2.txt", b"content2", "text/plain")),
+    ]
+    response = client.post("/batch_upload/", files=files)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 2
