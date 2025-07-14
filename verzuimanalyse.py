@@ -1,4 +1,4 @@
-def analyse_verzuim(filename, contents, sbi_code='6420', periode='2024KW2'):
+def analyse_verzuim(filename, contents, sbi_code='6420', periode='2025KW2'):
     return {}
 
 def analyse_meerdere(files):
