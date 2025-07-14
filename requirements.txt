@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+PyPDF2
+python-docx
+python-pptx
+openpyxl
+weasyprint
+matplotlib
