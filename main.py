@@ -1,6 +1,8 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
-from verzuimanalyse import analyse_verzuim
+from typing import List
+
+from verzuimanalyse import analyse_verzuim, analyse_meerdere
 from legalcheck import legalcheck
 
 app = FastAPI()
@@ -9,6 +11,16 @@ app = FastAPI()
 async def upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     result = analyse_verzuim(file.filename, contents)
+    return JSONResponse(content=result)
+
+
+@app.post("/batch_upload/")
+async def batch_upload(files: List[UploadFile] = File(...)):
+    contents = []
+    for f in files:
+        data = await f.read()
+        contents.append((f.filename, data))
+    result = analyse_meerdere(contents)
     return JSONResponse(content=result)
 
 @app.post("/legalcheck/")
