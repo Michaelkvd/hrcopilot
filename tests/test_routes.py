@@ -53,3 +53,22 @@ def test_legalcheck_route_with_keywords(tmp_path):
     assert "verzuim" in data["herkenning_kernwoorden"]
     assert data["legal_markdown"].startswith("## Juridische Analyse")
 
+
+def test_upload_route_pdf_output(tmp_path):
+    response = client.post(
+        "/upload/?formaat=pdf",
+        files={"file": ("dummy.txt", b"inhoud", "text/plain")},
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert len(response.content) > 10
+
+
+def test_upload_route_chart_output(tmp_path):
+    response = client.post(
+        "/upload/?formaat=grafiek",
+        files={"file": ("dummy.txt", b"inhoud", "text/plain")},
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+
