@@ -5,7 +5,7 @@ Deze FastAPI-module ondersteunt:
 - Analyse met benchmark, risiconiveau en aanbevelingen
 - PDF-rapportgeneratie uit markdown
 - Batchverwerking van meerdere bestanden
-- Grafiek-output als PNG
+- Grafiekoutput als PNG.
 
 ## Starten
 
