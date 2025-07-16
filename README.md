@@ -10,7 +10,8 @@ Deze repository bevat een kleine FastAPI-applicatie die HR-processen ondersteunt
 
 2. **Juridische check** (`legalcheck.py`)
    - Controleer teksten of bestanden op juridische kernwoorden en begrippen.
-   - Bepaal de complexiteit van een casus en geef advies en een actieplan.
+   - Bepaal de complexiteit van een casus en geef advies, actieplan en vervolgvragen.
+   - Ondersteunt ook Outlook `.msg` bestanden die automatisch naar tekst worden geconverteerd.
    - Geeft een overzicht van relevante bronnen uit bijvoorbeeld wetten.nl of rijksoverheid.nl.
 
 De API definieert twee endpoints in `main.py`:
