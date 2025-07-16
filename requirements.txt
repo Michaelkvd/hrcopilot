@@ -9,3 +9,5 @@ weasyprint
 matplotlib
 python-multipart
 requests
+extract_msg
+httpx>=0.24,<0.26

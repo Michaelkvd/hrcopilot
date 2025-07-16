@@ -52,6 +52,28 @@ def test_legalcheck_route_with_keywords(tmp_path):
     assert "ontslag" in data["herkenning_kernwoorden"]
     assert "verzuim" in data["herkenning_kernwoorden"]
     assert data["legal_markdown"].startswith("## Juridische Analyse")
+    assert data["verdiepende_vragen"]
+    assert sum(len(h) for h in data["bronnen"].values()) >= 1
+
+
+def test_legalcheck_accepts_msg_file(monkeypatch):
+    from types import SimpleNamespace
+    import legalcheck
+
+    class DummyMsg:
+        def __init__(self, path):
+            self.subject = "Test"
+            self.body = "Dit bericht noemt ontslag en is lang genoeg."
+
+    monkeypatch.setattr(legalcheck, "extract_msg", SimpleNamespace(Message=DummyMsg))
+    response = client.post(
+        "/legalcheck/",
+        files={"file": ("dummy.msg", b"binary", "application/vnd.ms-outlook")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["herkenning_kernwoorden"]
 
 
 def test_upload_route_pdf_output(tmp_path):

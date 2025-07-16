@@ -1,6 +1,9 @@
 
 from fastapi import UploadFile
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
+import tempfile
+import os
+import extract_msg
 
 KEYWORDS = [
     "ontslag", "verzuim", "vso", "vaststellingsovereenkomst", "brief",
@@ -45,6 +48,17 @@ def extract_text_from_input(
                 return file.file.read().decode("utf-8", errors="ignore")
             except Exception:
                 return ""
+        if file.filename.endswith(".msg"):
+            try:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".msg") as tmp:
+                    tmp.write(file.file.read())
+                    tmp.flush()
+                    msg = extract_msg.Message(tmp.name)
+                    text = f"{msg.subject}\n{msg.body}" if msg.body else msg.subject
+                os.unlink(tmp.name)
+                return text or ""
+            except Exception:
+                return ""
     return ""
 
 def flexibele_begrippenherkenning(text: str) -> Tuple[list, list]:
@@ -71,7 +85,24 @@ def bronnen_check(keywords: list, juridische_begrippen: list) -> dict:
                     hits.append((wet, uitleg))
         if hits:
             relevante_bronnen[bron] = hits
+    if not relevante_bronnen:
+        relevante_bronnen["wetten.nl"] = [
+            ("art. 7:610 BW", "Algemene bepalingen over de arbeidsovereenkomst."),
+        ]
     return relevante_bronnen
+
+
+def genereer_vragen(kernwoorden: List[str], juridische_begrippen: List[str]) -> List[str]:
+    vragen: List[str] = []
+    if "ontslag" in kernwoorden:
+        vragen.append("Welke stappen zijn al ondernomen richting ontslag?")
+    if "verzuim" in kernwoorden:
+        vragen.append("Is het verzuimprotocol volledig gevolgd?")
+    if "concurrentiebeding" in juridische_begrippen:
+        vragen.append("Bestaat er een geldig concurrentiebeding in het contract?")
+    if not vragen:
+        vragen.append("Kunt u extra informatie delen over de situatie?")
+    return vragen
 
 def generate_legal_advice(
     kernwoorden: list,
@@ -80,7 +111,7 @@ def generate_legal_advice(
     complexiteit: str,
     input_text: str,
     intern_beleid: Optional[str] = None
-) -> Tuple[str, str]:
+) -> Tuple[str, str, List[str]]:
     # Flexibele GPT-stijl adviezen
     if not kernwoorden and not juridische_begrippen:
         advies = (
@@ -91,7 +122,8 @@ def generate_legal_advice(
             "Voor nu zijn er geen directe acties vereist. "
             "Mocht de situatie veranderen of aanvullende informatie beschikbaar komen, heroverweeg dan deze analyse."
         )
-        return advies, actieplan
+        vragen = genereer_vragen(kernwoorden, juridische_begrippen)
+        return advies, actieplan, vragen
 
     # Dynamisch advies op basis van context
     aandachtspunten = kernwoorden + juridische_begrippen
@@ -121,7 +153,8 @@ def generate_legal_advice(
     stappen.append("• Evalueer de situatie regelmatig en pas het plan waar nodig aan.")
 
     actieplan += "\n".join(stappen)
-    return advies, actieplan
+    vragen = genereer_vragen(kernwoorden, juridische_begrippen)
+    return advies, actieplan, vragen
 
 def legalcheck(
     file: Optional[UploadFile] = None,
@@ -145,7 +178,7 @@ def legalcheck(
     kernwoorden, juridische_begrippen = flexibele_begrippenherkenning(text)
     complexiteit = casus_complexiteit_score(kernwoorden, juridische_begrippen)
     bronnen = bronnen_check(kernwoorden, juridische_begrippen)
-    advies, actieplan = generate_legal_advice(
+    advies, actieplan, vragen = generate_legal_advice(
         kernwoorden, juridische_begrippen, bronnen, complexiteit, text, intern_beleid
     )
 
@@ -166,6 +199,10 @@ def legalcheck(
         markdown += "Geen specifieke bronnen gevonden.\n"
     if intern_beleid:
         markdown += f"\n**Interne beleidsinformatie:**\n{intern_beleid}\n"
+    if vragen:
+        markdown += "\n**Vervolgvragen:**\n"
+        for q in vragen:
+            markdown += f"- {q}\n"
 
     return {
         "status": "ok",
@@ -175,5 +212,6 @@ def legalcheck(
         "advies": advies,
         "actieplan": actieplan,
         "bronnen": bronnen,
+        "verdiepende_vragen": vragen,
         "legal_markdown": markdown
     }
