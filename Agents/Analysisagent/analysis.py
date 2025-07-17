@@ -6,6 +6,26 @@ from datetime import datetime
 import random
 from utils.file_utils import append_row, LOG_FILE
 
+# Kernwoorden die verwijzen naar algemene analysefuncties. Deze lijst wordt
+# gebruikt om op basis van semantiek het juiste onderdeel aan te roepen.
+TRIGGERS = {
+    "analyse",
+    "rapport",
+    "spp",
+    "9 box",
+    "9-box",
+    "benchmark",
+    "trend",
+    "data",
+    "risicoanalyse",
+}
+
+
+def match_terms(text: str) -> bool:
+    """Return ``True`` if the text lijkt te gaan over data- of dossieranalyse."""
+    lower = text.lower()
+    return any(t in lower for t in TRIGGERS)
+
 
 def _safe_read(file: UploadFile) -> bytes:
     """Return the contents of an ``UploadFile`` and reset the pointer."""

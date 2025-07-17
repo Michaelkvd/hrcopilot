@@ -8,13 +8,36 @@ class BaseAgent:
 from fastapi import UploadFile
 from typing import List, Optional, Tuple
 from Agents.Analysisagent import analysis as analysis_mod
-from Agents.Legalagent.legalcheck import legalcheck
-from Agents.CSagent.feedback import store_feedback
-from Agents.CSagent.user_logging import registreer_gebruik
-from Agents.Absenceagent.verzuim import beantwoord_vraag
+from Agents.Analysisagent.analysis import TRIGGERS as ANALYSIS_TRIGGERS, match_terms as analysis_match
+from Agents.Legalagent.legalcheck import (
+    legalcheck,
+    TRIGGERS as LEGAL_TRIGGERS,
+    match_terms as legal_match,
+)
+from Agents.CSagent.feedback import (
+    store_feedback,
+    TRIGGERS as FEEDBACK_TRIGGERS,
+    match_terms as feedback_match,
+)
+from Agents.CSagent.user_logging import (
+    registreer_gebruik,
+    TRIGGERS as LOG_TRIGGERS,
+    match_terms as log_match,
+)
+from Agents.Absenceagent.verzuim import (
+    beantwoord_vraag,
+    TRIGGERS as ABSENCE_TRIGGERS,
+    match_terms as absence_match,
+)
 
 
 class AbsenceAgent(BaseAgent):
+    TRIGGERS = ABSENCE_TRIGGERS
+
+    @classmethod
+    def match_terms(cls, text: str) -> bool:
+        return absence_match(text)
+
     def analyse(self, file: UploadFile, periode: Optional[str] = None) -> dict:
         contents = file.file.read()
         file.file.seek(0)
@@ -38,11 +61,23 @@ class AbsenceAgent(BaseAgent):
 
 
 class LegalAgent(BaseAgent):
+    TRIGGERS = LEGAL_TRIGGERS
+
+    @classmethod
+    def match_terms(cls, text: str) -> bool:
+        return legal_match(text)
+
     def analyse(self, file: Optional[UploadFile] = None, text: Optional[str] = None, intern_beleid: Optional[str] = None) -> dict:
         return legalcheck(file=file, input_text=text, intern_beleid=intern_beleid)
 
 
 class AnalysisAgent(BaseAgent):
+    TRIGGERS = ANALYSIS_TRIGGERS
+
+    @classmethod
+    def match_terms(cls, text: str) -> bool:
+        return analysis_match(text)
+
     def analyse(self, file: UploadFile, vraag: str, formaat: str) -> Tuple[str, bytes, dict]:
         result = analysis_mod.analyse_bestand(file, vraag)
         analysis_mod.log_gebruik("user", "analyse")
@@ -65,6 +100,12 @@ class AnalysisAgent(BaseAgent):
 
 
 class FeedbackAgent(BaseAgent):
+    TRIGGERS = FEEDBACK_TRIGGERS | LOG_TRIGGERS
+
+    @classmethod
+    def match_terms(cls, text: str) -> bool:
+        return feedback_match(text) or log_match(text)
+
     def store(self, gebruiker: str, bericht: str) -> dict:
         return store_feedback(gebruiker, bericht)
 
@@ -78,4 +119,16 @@ class MainAgent:
         self.legal = LegalAgent()
         self.analysis = AnalysisAgent()
         self.feedback = FeedbackAgent()
+
+    def detect_agent(self, text: str) -> Optional[BaseAgent]:
+        """Kies een agent op basis van semantische triggers."""
+        if self.legal.match_terms(text):
+            return self.legal
+        if self.absence.match_terms(text):
+            return self.absence
+        if self.analysis.match_terms(text):
+            return self.analysis
+        if self.feedback.match_terms(text):
+            return self.feedback
+        return None
 
