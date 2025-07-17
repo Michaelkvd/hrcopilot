@@ -8,6 +8,24 @@ from io import BytesIO
 import pandas as pd
 from pptx import Presentation
 
+# Flexibele sleutelwoorden die de juridische module kunnen activeren.
+TRIGGERS = {
+    "juridisch",
+    "legal",
+    "ontslag",
+    "contract",
+    "vso",
+    "vaststellingsovereenkomst",
+    "arbeidsrecht",
+    "beding",
+}
+
+
+def match_terms(text: str) -> bool:
+    """Return ``True`` if juridische thema's vermoed worden in ``text``."""
+    lower = text.lower()
+    return any(t in lower for t in TRIGGERS)
+
 KEYWORDS = [
     "ontslag", "verzuim", "vso", "vaststellingsovereenkomst", "brief",
     "officiële waarschuwing", "beëindiging", "dienstverband", "adviesaanvraag",

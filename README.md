@@ -15,7 +15,7 @@ main.py             - definieert alle API‑routes
 agents.py           - installeert de bovengenoemde agents
 ```
 
-De `MainAgent` in `agents.py` bundelt de afzonderlijke agents en wordt gebruikt door de endpoints in `main.py`.
+De `MainAgent` in `agents.py` bundelt de afzonderlijke agents en wordt gebruikt door de endpoints in `main.py`. Daarnaast kan de `MainAgent` op basis van **semantische triggers** een passende agent selecteren. Woorden als "ontslag", "spp" of "feedback" worden automatisch gekoppeld aan de betreffende module.
 
 ### Belangrijkste agents
 
