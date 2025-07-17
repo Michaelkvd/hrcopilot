@@ -59,7 +59,7 @@ def test_legalcheck_route_with_keywords(tmp_path):
 
 def test_legalcheck_accepts_msg_file(monkeypatch):
     from types import SimpleNamespace
-    import legalcheck
+    from Agents.Legalagent import legalcheck
 
     class DummyMsg:
         def __init__(self, path):

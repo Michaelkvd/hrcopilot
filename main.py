@@ -60,7 +60,7 @@ async def analyse(file: UploadFile = File(...), vraag: str = "", formaat: str = 
 
 @app.post("/spp/")
 async def spp(file: UploadFile = File(...), formaat: str = "excel"):
-    media, data, data_type = main_agent.spp.analyse(file, formaat)
+    media, data, data_type = main_agent.analysis.analyse_spp(file, formaat)
     if media == "application/json":
         return JSONResponse(content=data)
     return StreamingResponse(BytesIO(data), media_type=media)

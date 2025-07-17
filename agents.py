@@ -1,29 +1,24 @@
 class BaseAgent:
     """Simple base class for all agents."""
+
     def handle(self, *args, **kwargs):
         raise NotImplementedError
 
 
 from fastapi import UploadFile
 from typing import List, Optional, Tuple
-from verzuimanalyse import (
-    analyse_verzuim,
-    analyse_meerdere,
-    genereer_pdf,
-    genereer_grafiek,
-)
-from legalcheck import legalcheck
-from analysis import analyse_bestand, genereer_rapport, log_gebruik
-from SPP import analyse_spp, genereer_spp_rapport, log_spp
-from feedback import store_feedback
-from user_logging import registreer_gebruik
+from Agents.Analysisagent import analysis as analysis_mod
+from Agents.Legalagent.legalcheck import legalcheck
+from Agents.CSagent.feedback import store_feedback
+from Agents.CSagent.user_logging import registreer_gebruik
+from Agents.Absenceagent.verzuim import beantwoord_vraag
 
 
 class AbsenceAgent(BaseAgent):
     def analyse(self, file: UploadFile, periode: Optional[str] = None) -> dict:
         contents = file.file.read()
         file.file.seek(0)
-        return analyse_verzuim(file.filename, contents, periode=periode)
+        return analysis_mod.analyse_verzuim(file.filename, contents, periode=periode)
 
     def analyse_batch(self, files: List[UploadFile], periode: Optional[str] = None) -> List[dict]:
         items: List[Tuple[str, bytes]] = []
@@ -32,14 +27,14 @@ class AbsenceAgent(BaseAgent):
             f.file.seek(0)
             items.append((f.filename, data))
         if periode is None:
-            return analyse_meerdere(items)
-        return [analyse_verzuim(n, c, periode=periode) for n, c in items]
+            return analysis_mod.analyse_meerdere(items)
+        return [analysis_mod.analyse_verzuim(n, c, periode=periode) for n, c in items]
 
     def pdf(self, markdown: str) -> bytes:
-        return genereer_pdf(markdown)
+        return analysis_mod.genereer_pdf(markdown)
 
     def chart(self, data: dict):
-        return genereer_grafiek(data)
+        return analysis_mod.genereer_grafiek(data)
 
 
 class LegalAgent(BaseAgent):
@@ -49,25 +44,24 @@ class LegalAgent(BaseAgent):
 
 class AnalysisAgent(BaseAgent):
     def analyse(self, file: UploadFile, vraag: str, formaat: str) -> Tuple[str, bytes, dict]:
-        result = analyse_bestand(file, vraag)
-        log_gebruik("user", "analyse")
-        mime, data = genereer_rapport(result, formaat)
+        result = analysis_mod.analyse_bestand(file, vraag)
+        analysis_mod.log_gebruik("user", "analyse")
+        mime, data = analysis_mod.genereer_rapport(result, formaat)
         return mime, data, result
 
-
-class SPPAagent(BaseAgent):
-    def analyse(self, file: UploadFile, formaat: str) -> Tuple[str, bytes | dict, str]:
-        result = analyse_spp(file)
-        log_spp("user", "spp")
+    def analyse_spp(self, file: UploadFile, formaat: str) -> Tuple[str, bytes | dict, str]:
+        result = analysis_mod.analyse_spp(file)
+        analysis_mod.log_spp("user", "spp")
         if formaat == "json":
             return "application/json", result, "json"
-        buf = genereer_spp_rapport(result, formaat)
+        buf = analysis_mod.genereer_spp_rapport(result, formaat)
         media = (
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            if formaat == "excel"
-            else "text/csv"
+            if formaat == "excel" else "text/csv"
         )
         return media, buf.getvalue(), "bytes"
+
+
 
 
 class FeedbackAgent(BaseAgent):
@@ -83,5 +77,5 @@ class MainAgent:
         self.absence = AbsenceAgent()
         self.legal = LegalAgent()
         self.analysis = AnalysisAgent()
-        self.spp = SPPAagent()
         self.feedback = FeedbackAgent()
+

@@ -1,12 +1,11 @@
 # HR Copilot
 
-Deze repository bevat een kleine FastAPI-applicatie die HR-processen ondersteunt. De focus ligt op twee modules:
+Deze repository bevat een kleine FastAPI-applicatie die HR-processen ondersteunt. De focus ligt op verschillende modules:
 
-1. **Verzuimanalyse** (`verzuimanalyse.py`)
-   - Upload en analyseer verzuimdocumenten.
-   - Batchverwerking van meerdere bestanden.
-   - Genereer rapporten als PDF vanuit Markdown.
-   - Maak een eenvoudige grafiek van het verzuim versus een benchmark.
+1. **Verzuimcasuïstiek** (`Agents/Absenceagent/verzuim.py`)
+   - Beantwoord vragen over dossiers en wetgeving rond verzuim.
+   - Analyse van verzuimbestanden gebeurt via `Agents/Analysisagent/analysis.py`.
+   - Genereer PDF-rapporten of een grafiek van het verzuim versus een benchmark.
 
 2. **Juridische check** (`legalcheck.py`)
    - Controleer teksten of bestanden op juridische kernwoorden en begrippen.
@@ -14,12 +13,13 @@ Deze repository bevat een kleine FastAPI-applicatie die HR-processen ondersteunt
    - Ondersteunt ook Outlook `.msg` bestanden die automatisch naar tekst worden geconverteerd.
    - Geeft een overzicht van relevante bronnen uit bijvoorbeeld wetten.nl of rijksoverheid.nl.
 
-De API definieert twee endpoints in `main.py`:
+De API definieert enkele endpoints in `main.py`:
 
-- `POST /upload/` – verzuimanalyse van een enkel bestand. Gebruik de query
-  parameter `formaat=pdf` of `formaat=grafiek` om respectievelijk een PDF-rapport
-  of PNG-grafiek te ontvangen.
+- `POST /upload/` – analyse van verzuimdocumenten.
+- `POST /batch_upload/` – verwerk meerdere documenten tegelijk.
 - `POST /legalcheck/` – juridische analyse van tekst of (optioneel) een bestand.
+- `POST /analyse/` – algemene bestandsanalyse.
+- `POST /spp/` – analyse van SPP-data.
 
 ## Installatie en starten
 
