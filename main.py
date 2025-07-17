@@ -17,10 +17,7 @@ from SPP import analyse_spp, genereer_spp_rapport, log_spp
 from feedback import store_feedback
 from user_logging import registreer_gebruik
 
-
 ADMIN_USER = "admin"
-=======
-main
 
 app = FastAPI()
 
@@ -91,10 +88,10 @@ async def analyse(file: UploadFile = File(...), vraag: str = "", formaat: str = 
 async def spp(file: UploadFile = File(...), formaat: str = "excel"):
     result = analyse_spp(file)
     log_spp("user", "spp")
-codex/voeg-verbeteringen-en-nieuwe-modules-toe
     if formaat == "json":
         return JSONResponse(content=result)
-main
+    if formaat == "json":
+        return JSONResponse(content=result)
     buf = genereer_spp_rapport(result, formaat)
     media = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -106,11 +103,10 @@ main
 
 @app.post("/feedback/")
 async def feedback(gebruiker: str = Form(...), bericht: str = Form(...)):
-
     if gebruiker != ADMIN_USER:
         return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
-=======
-main
+    if gebruiker != ADMIN_USER:
+        return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
     result = store_feedback(gebruiker, bericht)
     return JSONResponse(content=result)
 
@@ -119,7 +115,5 @@ main
 async def log(gebruiker: str = Form(...), actie: str = Form(...)):
     if gebruiker != ADMIN_USER:
         return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
-=======
-main
     result = registreer_gebruik(gebruiker, actie)
     return JSONResponse(content=result)

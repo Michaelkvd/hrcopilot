@@ -6,7 +6,9 @@ from io import BytesIO
 
 
 def analyse_spp(file: UploadFile) -> Dict:
+=======
 
+main
     """Analyseer SPP-data en geef een volledige 9-box grid terug."""
 
     contents = file.file.read()
@@ -53,7 +55,7 @@ def analyse_spp(file: UploadFile) -> Dict:
 
     acties = ["Voer ontwikkelgesprekken", "Bekijken herplaatsingsmogelijkheden"]
     adviezen = ["Rapporteer periodiek aan management", "Stem af met HR over opvolging"]
-
+=======
 =======
     contents = file.file.read()
     # Placeholder: derive counts from file size
