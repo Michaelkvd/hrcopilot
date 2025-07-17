@@ -7,19 +7,32 @@ import random
 from utils.file_utils import append_row, LOG_FILE
 
 
+def _safe_read(file: UploadFile) -> bytes:
+    """Return the contents of an ``UploadFile`` and reset the pointer."""
+    try:
+        data = file.file.read()
+    except Exception:
+        data = b""
+    finally:
+        try:
+            file.file.seek(0)
+        except Exception:
+            pass
+    return data or b""
+
+
 RISK_LEVELS = ["laag", "matig", "verhoogd", "hoog"]
 
 
 def analyse_bestand(file: UploadFile, vraag: str) -> dict:
     """Analyse a single file based on size and return risk information."""
 
-    contents = file.file.read()
-    file.file.seek(0)
+    contents = _safe_read(file)
     grootte = len(contents)
     risico_index = min(grootte % 4, 3)
     risico = RISK_LEVELS[risico_index]
     scenario = {
-        "als": vraag,
+        "als": vraag or "n.v.t.",
         "dan": "placeholder scenario",
     }
     aanbevelingen = [f"Aanbeveling {i+1}" for i in range(risico_index + 2)]
@@ -139,7 +152,8 @@ def analyse_verzuim(
 def analyse_meerdere(files: Iterable[Tuple[str, bytes]]) -> List[dict]:
     """Analyse multiple ``(filename, content)`` tuples."""
 
-    return [analyse_verzuim(fn, data) for fn, data in files]
+    clean_files = [(n, c) for n, c in files if c]
+    return [analyse_verzuim(fn, data) for fn, data in clean_files]
 
 
 def patroon_analyse(files: Iterable[Tuple[str, bytes]]) -> dict:
@@ -196,7 +210,7 @@ def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -
     """Analyseer SPP-data uit een bestand of tekst en geef een 9-box grid terug."""
 
     if file is not None:
-        contents = file.file.read()
+        contents = _safe_read(file)
         buf = BytesIO(contents)
         try:
             df = pd.read_excel(buf)
@@ -231,16 +245,17 @@ def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -
         col = "_".join(col.split())
         return col
 
-    norm_cols = {_norm(c): c for c in df.columns}
-    for key in grid_keys:
-        if key in norm_cols:
-            grid[key] = int(df[norm_cols[key]].sum())
+    if not df.empty:
+        norm_cols = {_norm(c): c for c in df.columns}
+        for key in grid_keys:
+            if key in norm_cols:
+                grid[key] = int(df[norm_cols[key]].sum())
 
-    if all(v == 0 for v in grid.values()):
-        numeric = df.select_dtypes(include="number").values.flatten()
-        for i, key in enumerate(grid_keys):
-            if i < len(numeric):
-                grid[key] = int(numeric[i])
+        if all(v == 0 for v in grid.values()):
+            numeric = df.select_dtypes(include="number").values.flatten()
+            for i, key in enumerate(grid_keys):
+                if i < len(numeric):
+                    grid[key] = int(numeric[i])
 
     named_grid = {CATEGORY_LABELS[k]: v for k, v in grid.items()}
 
