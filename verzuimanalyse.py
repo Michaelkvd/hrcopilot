@@ -64,8 +64,8 @@ def genereer_aanbevelingen(risico: str) -> str:
     return f"Mogelijke vervolgstappen: {adviezen}"
 
 
-def haal_cbs_benchmark(periode: str | None = None) -> dict:
-    """Simuleer een CBS benchmark voor SBI-codes 6420 en 6622."""
+def haal_branchenorm(periode: str | None = None) -> dict:
+    """Simuleer een algemene branchenorm zonder specifieke codes."""
 
     if periode is None:
         periode = get_latest_cbs_quarter()
@@ -73,7 +73,6 @@ def haal_cbs_benchmark(periode: str | None = None) -> dict:
     # Placeholder waarde, in een echte implementatie zou data via een API
     # van het CBS worden opgehaald.
     return {
-        "sbi_codes": ["6420", "6622"],
         "periode": periode,
         "waarde": 4.0,
     }
@@ -82,7 +81,6 @@ def haal_cbs_benchmark(periode: str | None = None) -> dict:
 def analyse_verzuim(
     filename: str,
     contents: bytes,
-    sbi_code: str = "6420",
     periode: str | None = None,
 ) -> dict:
     """Analyse a single file and return placeholder data with risk advice."""
@@ -94,20 +92,22 @@ def analyse_verzuim(
     # bestandslengte zodat de uitkomst deterministisch is in tests.
     verzuimpercentage = round(2 + (len(contents) % 8) * 0.5, 2)
 
-    cbs_benchmark = haal_cbs_benchmark(periode)
+    branche_benchmark = haal_branchenorm(periode)
     risico = bepaal_risico(verzuimpercentage)
     advies = genereer_aanbevelingen(risico)
     beleidsadvies = (
+        f"Het verzuimpercentage bedraagt {verzuimpercentage}. "
+=======
         f"Verzuimpercentage in team {sbi_code} is {verzuimpercentage}. "
+main
         "Overweeg teaminterventie of coachingsinzet."
     )
 
     return {
         "filename": filename,
-        "sbi_code": sbi_code,
         "periode": periode,
         "verzuimpercentage": verzuimpercentage,
-        "cbs_benchmark": cbs_benchmark,
+        "branche_benchmark": branche_benchmark,
         "risico": risico,
         "advies": advies,
         "beleidsadvies": beleidsadvies,
@@ -151,7 +151,7 @@ def genereer_grafiek(data: dict):
         ["Intern", "Benchmark"],
         [
             data.get("verzuimpercentage", 0),
-            data.get("cbs_benchmark", {}).get("waarde", 0),
+            data.get("branche_benchmark", {}).get("waarde", 0),
         ],
     )
     ax.set_title("Verzuim vs Benchmark")

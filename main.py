@@ -17,6 +17,11 @@ from SPP import analyse_spp, genereer_spp_rapport, log_spp
 from feedback import store_feedback
 from user_logging import registreer_gebruik
 
+
+ADMIN_USER = "admin"
+=======
+main
+
 app = FastAPI()
 
 @app.post("/upload/")
@@ -32,10 +37,9 @@ async def upload_file(
         markdown = (
             f"# Verzuimrapport\n"
             f"**Bestand:** {result['filename']}\n"
-            f"**SBI-code:** {result['sbi_code']}\n"
             f"**Periode:** {result['periode']}\n"
             f"**Verzuimpercentage:** {result['verzuimpercentage']}\n"
-            f"**Benchmark:** {result['cbs_benchmark']['waarde']}\n"
+            f"**Benchmark:** {result['branche_benchmark']['waarde']}\n"
             f"**Risico:** {result['risico']}\n"
             f"**Advies:** {result['advies']}\n"
         )
@@ -87,6 +91,10 @@ async def analyse(file: UploadFile = File(...), vraag: str = "", formaat: str = 
 async def spp(file: UploadFile = File(...), formaat: str = "excel"):
     result = analyse_spp(file)
     log_spp("user", "spp")
+codex/voeg-verbeteringen-en-nieuwe-modules-toe
+    if formaat == "json":
+        return JSONResponse(content=result)
+main
     buf = genereer_spp_rapport(result, formaat)
     media = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -98,11 +106,20 @@ async def spp(file: UploadFile = File(...), formaat: str = "excel"):
 
 @app.post("/feedback/")
 async def feedback(gebruiker: str = Form(...), bericht: str = Form(...)):
+
+    if gebruiker != ADMIN_USER:
+        return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
+=======
+main
     result = store_feedback(gebruiker, bericht)
     return JSONResponse(content=result)
 
 
 @app.post("/log/")
 async def log(gebruiker: str = Form(...), actie: str = Form(...)):
+    if gebruiker != ADMIN_USER:
+        return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
+=======
+main
     result = registreer_gebruik(gebruiker, actie)
     return JSONResponse(content=result)
