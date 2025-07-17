@@ -39,6 +39,7 @@ De volgende routes zijn beschikbaar:
 - `POST /batch_upload/` – verwerk meerdere documenten in één keer.
 - `POST /legalcheck/` – voer een juridische check uit op tekst of een geüpload bestand.
 - `POST /analyse/` – algemene bestandsanalyse met risicobepaling.
+- `POST /spp/` – analyse van SPP‑data (9‑box grid) uit een bestand of tekst in JSON, Excel of CSV. Kolomnamen mogen spaties bevatten en `normaal` wordt gezien als synoniem voor `midden`.
 - `POST /spp/` – analyse van SPP‑data (9‑box grid) uit een bestand of tekst in JSON, Excel of CSV.
 - `POST /feedback/` – sla feedback op (alleen beheerdersaccount).
 - `POST /log/` – registreer een gebruikersactie (alleen beheerdersaccount).

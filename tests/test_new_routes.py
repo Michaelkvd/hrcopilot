@@ -57,6 +57,18 @@ def test_spp_text_input():
     assert data["grid"]["ster"] == 1
 
 
+def test_spp_column_synonyms_and_spaces():
+    csv = "Laag potentieel lage prestatie,Normaal potentieel hoge prestatie\n2,3\n"
+    response = client.post(
+        "/spp/?formaat=json",
+        files={"file": ("syn.csv", csv.encode(), "text/csv")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["grid"]["onderpresteerder"] == 2
+    assert data["grid"]["topper"] == 3
+
+
 def test_feedback_route_requires_admin():
     response = client.post(
         "/feedback/",

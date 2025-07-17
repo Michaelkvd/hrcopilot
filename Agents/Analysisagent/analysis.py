@@ -222,7 +222,16 @@ def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -
 
     grid = {k: 0 for k in grid_keys}
 
-    norm_cols = {c.strip().lower().replace(" ", "_"): c for c in df.columns}
+    def _norm(col: str) -> str:
+        col = col.strip().lower()
+        col = col.replace(",", "").replace("-", " ")
+        col = col.replace("normaal", "midden")
+        col = col.replace("normale", "midden")
+        col = col.replace("hoger", "hoog")
+        col = "_".join(col.split())
+        return col
+
+    norm_cols = {_norm(c): c for c in df.columns}
     for key in grid_keys:
         if key in norm_cols:
             grid[key] = int(df[norm_cols[key]].sum())
