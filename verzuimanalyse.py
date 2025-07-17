@@ -97,6 +97,9 @@ def analyse_verzuim(
     advies = genereer_aanbevelingen(risico)
     beleidsadvies = (
         f"Het verzuimpercentage bedraagt {verzuimpercentage}. "
+=======
+        f"Verzuimpercentage in team {sbi_code} is {verzuimpercentage}. "
+main
         "Overweeg teaminterventie of coachingsinzet."
     )
 

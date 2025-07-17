@@ -22,7 +22,6 @@ def test_spp_route_excel_output():
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/vnd.openxml")
 
-
 def test_spp_route_json_grid_keys():
     response = client.post(
         "/spp/?formaat=json",
@@ -46,12 +45,15 @@ def test_spp_auto_category_mapping():
 
 
 def test_feedback_route_requires_admin():
+=======
+def test_feedback_route():
+main
     response = client.post(
         "/feedback/",
         data={"gebruiker": "tester", "bericht": "goed"},
     )
-    assert response.status_code == 403
 
+    assert response.status_code == 403
 
 def test_feedback_route_with_admin():
     response = client.post(
@@ -75,3 +77,7 @@ def test_legalcheck_risk_and_sources():
     for hits in data["bronnen"].values():
         for url, _ in hits:
             assert url.startswith("http")
+=======
+    assert response.status_code == 200
+    assert response.json()["status"] == "opgeslagen"
+main
