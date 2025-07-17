@@ -17,6 +17,14 @@ ALGEMENE_JURIDISCHE_BEGRIPPEN = [
     "disfunctioneren", "opzegtermijn", "op staande voet", "wederzijds goedvinden"
 ]
 
+RISICO_NIVEAUS = {
+    "concurrentiebeding": "hoog",
+    "relatiebeding": "matig",
+    "studiekostenbeding": "matig",
+    "proeftijd": "laag",
+    "transitievergoeding": "gemiddeld",
+}
+
 BRONNEN_INFO = {
     "wetten.nl": {
         "url": "https://wetten.overheid.nl",
@@ -88,6 +96,9 @@ def risico_inschatting(
     score += len(juridische_begrippen)
     # Weeg complexiteit zwaarder mee dan eventuele kernwoorden
     score += {"eenvoudig": 0, "middelmatig": 1.5, "complex": 3}[complexiteit]
+    score += len(keywords) * 0.5
+    score += len(juridische_begrippen)
+    score += {"eenvoudig": 0, "middelmatig": 1, "complex": 2}[complexiteit]
 
     if score >= 6:
         return "hoog"
@@ -130,6 +141,29 @@ def bronnen_check(text: str, juridische_begrippen: list, complexiteit: str) -> d
 
     return bronnen
 
+def risico_inschatting(juridische_begrippen: list) -> str:
+    niveaus = [RISICO_NIVEAUS.get(b, "laag") for b in juridische_begrippen]
+    if "hoog" in niveaus:
+        return "hoog"
+    if "gemiddeld" in niveaus or "matig" in niveaus:
+        return "matig"
+    return "laag"
+
+def bronnen_check(keywords: list, juridische_begrippen: list) -> dict:
+    relevante_bronnen = {}
+    for bron, artikelen in BRONNEN_INFO.items():
+        hits = []
+        for trefwoord in keywords + juridische_begrippen:
+            for wet, uitleg in artikelen.items():
+                if trefwoord.lower() in wet.lower() or trefwoord.lower() in uitleg.lower():
+                    hits.append((wet, uitleg))
+        if hits:
+            relevante_bronnen[bron] = hits
+    if not relevante_bronnen:
+        relevante_bronnen["wetten.nl"] = [
+            ("art. 7:610 BW", "Algemene bepalingen over de arbeidsovereenkomst."),
+        ]
+    return relevante_bronnen
 
 def genereer_vragen(kernwoorden: List[str], juridische_begrippen: List[str]) -> List[str]:
     vragen: List[str] = []
@@ -194,6 +228,7 @@ def generate_legal_advice(
 
     actieplan += "\n".join(stappen)
     risico = risico_inschatting(input_text, complexiteit, kernwoorden, juridische_begrippen)
+    risico = risico_inschatting(juridische_begrippen)
     vragen = genereer_vragen(kernwoorden, juridische_begrippen)
     return advies, actieplan, vragen, risico
 
@@ -219,6 +254,7 @@ def legalcheck(
     kernwoorden, juridische_begrippen = flexibele_begrippenherkenning(text)
     complexiteit = casus_complexiteit_score(kernwoorden, juridische_begrippen)
     bronnen = bronnen_check(text, juridische_begrippen, complexiteit)
+    bronnen = bronnen_check(kernwoorden, juridische_begrippen)
     advies, actieplan, vragen, risico = generate_legal_advice(
         kernwoorden, juridische_begrippen, bronnen, complexiteit, text, intern_beleid
     )

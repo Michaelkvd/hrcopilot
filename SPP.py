@@ -6,6 +6,9 @@ from io import BytesIO
 
 
 def analyse_spp(file: UploadFile) -> Dict:
+=======
+
+main
     """Analyseer SPP-data en geef een volledige 9-box grid terug."""
 
     contents = file.file.read()
@@ -52,7 +55,21 @@ def analyse_spp(file: UploadFile) -> Dict:
 
     acties = ["Voer ontwikkelgesprekken", "Bekijken herplaatsingsmogelijkheden"]
     adviezen = ["Rapporteer periodiek aan management", "Stem af met HR over opvolging"]
-
+=======
+=======
+    contents = file.file.read()
+    # Placeholder: derive counts from file size
+    size = len(contents)
+    grid = {
+        "onderpresteerders": size % 5,
+        "generiek": (size // 5) % 5,
+        "toppers": (size // 25) % 5,
+        "talenten": (size // 125) % 5,
+    }
+    risico = "hoog" if grid["onderpresteerders"] > 3 else "laag"
+    acties = ["Actie 1", "Actie 2"]
+    adviezen = ["Advies HR", "Advies management"]
+main
     return {
         "grid": grid,
         "risico": risico,

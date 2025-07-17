@@ -90,6 +90,8 @@ async def spp(file: UploadFile = File(...), formaat: str = "excel"):
     log_spp("user", "spp")
     if formaat == "json":
         return JSONResponse(content=result)
+    if formaat == "json":
+        return JSONResponse(content=result)
     buf = genereer_spp_rapport(result, formaat)
     media = (
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -101,6 +103,8 @@ async def spp(file: UploadFile = File(...), formaat: str = "excel"):
 
 @app.post("/feedback/")
 async def feedback(gebruiker: str = Form(...), bericht: str = Form(...)):
+    if gebruiker != ADMIN_USER:
+        return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
     if gebruiker != ADMIN_USER:
         return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
     result = store_feedback(gebruiker, bericht)
