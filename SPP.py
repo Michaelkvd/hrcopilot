@@ -50,20 +50,8 @@ def analyse_spp(file: UploadFile) -> Dict:
     )
     risico = "hoog" if onderpresteerders > 4 else "laag" if onderpresteerders < 2 else "matig"
 
-    acties = ["Voer ontwikkelgesprekken", "Bekijken herplaatsingsmogelijkheden"]
+    acties = ["Voer ontwikkelgesprekken", "Bekijk herplaatsingsmogelijkheden"]
     adviezen = ["Rapporteer periodiek aan management", "Stem af met HR over opvolging"]
-    contents = file.file.read()
-    # Placeholder: derive counts from file size
-    size = len(contents)
-    grid = {
-        "onderpresteerders": size % 5,
-        "generiek": (size // 5) % 5,
-        "toppers": (size // 25) % 5,
-        "talenten": (size // 125) % 5,
-    }
-    risico = "hoog" if grid["onderpresteerders"] > 3 else "laag"
-    acties = ["Actie 1", "Actie 2"]
-    adviezen = ["Advies HR", "Advies management"]
     return {
         "grid": grid,
         "risico": risico,

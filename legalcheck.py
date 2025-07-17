@@ -164,29 +164,6 @@ def bronnen_check(text: str, juridische_begrippen: list, complexiteit: str) -> d
 
     return bronnen
   
-def risico_inschatting(juridische_begrippen: list) -> str:
-    niveaus = [RISICO_NIVEAUS.get(b, "laag") for b in juridische_begrippen]
-    if "hoog" in niveaus:
-        return "hoog"
-    if "gemiddeld" in niveaus or "matig" in niveaus:
-        return "matig"
-    return "laag"
-
-def bronnen_check(keywords: list, juridische_begrippen: list) -> dict:
-    relevante_bronnen = {}
-    for bron, artikelen in BRONNEN_INFO.items():
-        hits = []
-        for trefwoord in keywords + juridische_begrippen:
-            for wet, uitleg in artikelen.items():
-                if trefwoord.lower() in wet.lower() or trefwoord.lower() in uitleg.lower():
-                    hits.append((wet, uitleg))
-        if hits:
-            relevante_bronnen[bron] = hits
-    if not relevante_bronnen:
-        relevante_bronnen["wetten.nl"] = [
-            ("art. 7:610 BW", "Algemene bepalingen over de arbeidsovereenkomst."),
-        ]
-    return relevante_bronnen
 
 def genereer_vragen(kernwoorden: List[str], juridische_begrippen: List[str]) -> List[str]:
     vragen: List[str] = []
