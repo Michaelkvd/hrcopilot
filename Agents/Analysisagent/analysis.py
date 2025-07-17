@@ -1,8 +1,45 @@
-from __future__ import annotations
-
+from fastapi import UploadFile
+from typing import Iterable, List, Tuple, Optional, Dict
+import pandas as pd
+from io import BytesIO
 from datetime import datetime
-from typing import Iterable, List, Tuple
 import random
+from utils.file_utils import append_row, LOG_FILE
+
+
+RISK_LEVELS = ["laag", "matig", "verhoogd", "hoog"]
+
+
+def analyse_bestand(file: UploadFile, vraag: str) -> dict:
+    # Simplified placeholder analysis based on file size
+    contents = file.file.read()
+    grootte = len(contents)
+    risico_index = min(grootte % 4, 3)
+    risico = RISK_LEVELS[risico_index]
+    scenario = {
+        "als": vraag,
+        "dan": "placeholder scenario",
+    }
+    aanbevelingen = [f"Aanbeveling {i+1}" for i in range(risico_index + 2)]
+    return {
+        "bestand": file.filename,
+        "risico": risico,
+        "scenario": scenario,
+        "aanbevelingen": aanbevelingen,
+    }
+
+
+def genereer_rapport(data: dict, formaat: str = "json") -> Tuple[str, bytes]:
+    if formaat == "excel":
+        buf = BytesIO()
+        df = pd.DataFrame([data])
+        df.to_excel(buf, index=False)
+        return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buf.getvalue()
+    return "application/json", BytesIO(str(data).encode()).getvalue()
+
+
+def log_gebruik(user: str, actie: str):
+    append_row(LOG_FILE, [user, actie])
 
 
 def get_latest_cbs_quarter() -> str:
@@ -12,7 +49,6 @@ def get_latest_cbs_quarter() -> str:
     year = today.year
     month = today.month
 
-    # Determine current quarter.
     if 1 <= month <= 3:
         quarter = 1
     elif 4 <= month <= 6:
@@ -22,7 +58,6 @@ def get_latest_cbs_quarter() -> str:
     else:
         quarter = 4
 
-    # Move one quarter back to get the last completed quarter.
     if quarter == 1:
         return f"{year - 1}KW4"
     return f"{year}KW{quarter - 1}"
@@ -70,8 +105,6 @@ def haal_branchenorm(periode: str | None = None) -> dict:
     if periode is None:
         periode = get_latest_cbs_quarter()
 
-    # Placeholder waarde, in een echte implementatie zou data via een API
-    # van het CBS worden opgehaald.
     return {
         "periode": periode,
         "waarde": 4.0,
@@ -88,8 +121,6 @@ def analyse_verzuim(
     if periode is None:
         periode = get_latest_cbs_quarter()
 
-    # Placeholder berekening van het verzuimpercentage op basis van de
-    # bestandslengte zodat de uitkomst deterministisch is in tests.
     verzuimpercentage = round(2 + (len(contents) % 8) * 0.5, 2)
 
     branche_benchmark = haal_branchenorm(periode)
@@ -111,6 +142,7 @@ def analyse_verzuim(
         "resultaat": "Analyse nog niet geïmplementeerd",
     }
 
+
 def analyse_meerdere(files: Iterable[Tuple[str, bytes]]) -> List[dict]:
     """Analyse multiple ``(filename, content)`` tuples."""
 
@@ -130,6 +162,7 @@ def patroon_analyse(files: Iterable[Tuple[str, bytes]]) -> dict:
         "langdurige_dossiers": langdurig,
     }
 
+
 def genereer_pdf(markdown: str) -> bytes:
     """Render markdown to PDF and return the binary data."""
 
@@ -137,6 +170,7 @@ def genereer_pdf(markdown: str) -> bytes:
 
     html = HTML(string=markdown.replace("\n", "<br>"))
     return html.write_pdf()
+
 
 def genereer_grafiek(data: dict):
     """Create a simple bar chart comparing internal data with a benchmark."""
@@ -153,3 +187,71 @@ def genereer_grafiek(data: dict):
     )
     ax.set_title("Verzuim vs Benchmark")
     return fig
+
+
+def analyse_spp(file: UploadFile) -> Dict:
+    """Analyseer SPP-data en geef een volledige 9-box grid terug."""
+
+    contents = file.file.read()
+    buf = BytesIO(contents)
+    try:
+        df = pd.read_excel(buf)
+    except Exception:
+        buf.seek(0)
+        df = pd.read_csv(buf)
+
+    grid_keys = [
+        "laag_potentieel_lage_prestatie",
+        "laag_potentieel_midden_prestatie",
+        "laag_potentieel_hoge_prestatie",
+        "midden_potentieel_lage_prestatie",
+        "midden_potentieel_midden_prestatie",
+        "midden_potentieel_hoge_prestatie",
+        "hoog_potentieel_lage_prestatie",
+        "hoog_potentieel_midden_prestatie",
+        "hoog_potentieel_hoge_prestatie",
+    ]
+
+    grid = {k: 0 for k in grid_keys}
+
+    norm_cols = {c.strip().lower().replace(" ", "_"): c for c in df.columns}
+    for key in grid_keys:
+        if key in norm_cols:
+            grid[key] = int(df[norm_cols[key]].sum())
+
+    if all(v == 0 for v in grid.values()):
+        numeric = df.select_dtypes(include="number").values.flatten()
+        for i, key in enumerate(grid_keys):
+            if i < len(numeric):
+                grid[key] = int(numeric[i])
+
+    onderpresteerders = (
+        grid["laag_potentieel_lage_prestatie"]
+        + grid["midden_potentieel_lage_prestatie"]
+        + grid["hoog_potentieel_lage_prestatie"]
+    )
+    risico = "hoog" if onderpresteerders > 4 else "laag" if onderpresteerders < 2 else "matig"
+
+    acties = ["Voer ontwikkelgesprekken", "Bekijk herplaatsingsmogelijkheden"]
+    adviezen = ["Rapporteer periodiek aan management", "Stem af met HR over opvolging"]
+    return {
+        "grid": grid,
+        "risico": risico,
+        "acties": acties,
+        "adviezen": adviezen,
+    }
+
+
+def genereer_spp_rapport(data: Dict, formaat: str = "excel") -> BytesIO:
+    df = pd.DataFrame([data["grid"]])
+    buf = BytesIO()
+    if formaat == "excel":
+        df.to_excel(buf, index=False)
+    else:
+        df.to_csv(buf, index=False)
+    buf.seek(0)
+    return buf
+
+
+def log_spp(user: str, actie: str):
+    append_row(LOG_FILE, [user, actie])
