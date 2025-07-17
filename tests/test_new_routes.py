@@ -41,8 +41,32 @@ def test_spp_auto_category_mapping():
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["grid"]["laag_potentieel_lage_prestatie"] == 1
-    assert data["grid"]["hoog_potentieel_hoge_prestatie"] == 2
+    assert data["grid"]["onderpresteerder"] == 1
+    assert data["grid"]["ster"] == 2
+
+
+def test_spp_text_input():
+    csv = "laag_potentieel_lage_prestatie,hoog_potentieel_hoge_prestatie\n1,1\n"
+    response = client.post(
+        "/spp/?formaat=json",
+        data={"text": csv},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["grid"]["onderpresteerder"] == 1
+    assert data["grid"]["ster"] == 1
+
+
+def test_spp_column_synonyms_and_spaces():
+    csv = "Laag potentieel lage prestatie,Normaal potentieel hoge prestatie\n2,3\n"
+    response = client.post(
+        "/spp/?formaat=json",
+        files={"file": ("syn.csv", csv.encode(), "text/csv")},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["grid"]["onderpresteerder"] == 2
+    assert data["grid"]["topper"] == 3
 
 
 def test_feedback_route_requires_admin():

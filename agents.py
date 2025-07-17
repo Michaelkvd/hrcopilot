@@ -49,8 +49,8 @@ class AnalysisAgent(BaseAgent):
         mime, data = analysis_mod.genereer_rapport(result, formaat)
         return mime, data, result
 
-    def analyse_spp(self, file: UploadFile, formaat: str) -> Tuple[str, bytes | dict, str]:
-        result = analysis_mod.analyse_spp(file)
+    def analyse_spp(self, file: Optional[UploadFile], text: Optional[str], formaat: str) -> Tuple[str, bytes | dict, str]:
+        result = analysis_mod.analyse_spp(file=file, text=text)
         analysis_mod.log_spp("user", "spp")
         if formaat == "json":
             return "application/json", result, "json"
