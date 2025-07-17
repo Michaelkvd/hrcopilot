@@ -1,7 +1,7 @@
 from fastapi import UploadFile
 from typing import Iterable, List, Tuple, Optional, Dict
 import pandas as pd
-from io import BytesIO
+from io import BytesIO, StringIO
 from datetime import datetime
 import random
 from utils.file_utils import append_row, LOG_FILE
@@ -179,16 +179,34 @@ def genereer_grafiek(data: dict):
     return fig
 
 
-def analyse_spp(file: UploadFile) -> Dict:
-    """Analyseer SPP-data en geef een volledige 9-box grid terug."""
+CATEGORY_LABELS = {
+    "laag_potentieel_lage_prestatie": "onderpresteerder",
+    "midden_potentieel_lage_prestatie": "onstabiele presteerder",
+    "hoog_potentieel_lage_prestatie": "starter",
+    "laag_potentieel_midden_prestatie": "generiek medewerker",
+    "midden_potentieel_midden_prestatie": "professional",
+    "hoog_potentieel_midden_prestatie": "talent",
+    "laag_potentieel_hoge_prestatie": "specialist",
+    "midden_potentieel_hoge_prestatie": "topper",
+    "hoog_potentieel_hoge_prestatie": "ster",
+}
 
-    contents = file.file.read()
-    buf = BytesIO(contents)
-    try:
-        df = pd.read_excel(buf)
-    except Exception:
-        buf.seek(0)
-        df = pd.read_csv(buf)
+
+def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -> Dict:
+    """Analyseer SPP-data uit een bestand of tekst en geef een 9-box grid terug."""
+
+    if file is not None:
+        contents = file.file.read()
+        buf = BytesIO(contents)
+        try:
+            df = pd.read_excel(buf)
+        except Exception:
+            buf.seek(0)
+            df = pd.read_csv(buf)
+    elif text is not None:
+        df = pd.read_csv(StringIO(text))
+    else:
+        raise ValueError("Geen input opgegeven")
 
     grid_keys = [
         "laag_potentieel_lage_prestatie",
@@ -215,17 +233,19 @@ def analyse_spp(file: UploadFile) -> Dict:
             if i < len(numeric):
                 grid[key] = int(numeric[i])
 
+    named_grid = {CATEGORY_LABELS[k]: v for k, v in grid.items()}
+
     onderpresteerders = (
-        grid["laag_potentieel_lage_prestatie"]
-        + grid["midden_potentieel_lage_prestatie"]
-        + grid["hoog_potentieel_lage_prestatie"]
+        named_grid["onderpresteerder"]
+        + named_grid["onstabiele presteerder"]
+        + named_grid["starter"]
     )
     risico = "hoog" if onderpresteerders > 4 else "laag" if onderpresteerders < 2 else "matig"
 
     acties = ["Voer ontwikkelgesprekken", "Bekijk herplaatsingsmogelijkheden"]
     adviezen = ["Rapporteer periodiek aan management", "Stem af met HR over opvolging"]
     return {
-        "grid": grid,
+        "grid": named_grid,
         "risico": risico,
         "acties": acties,
         "adviezen": adviezen,
