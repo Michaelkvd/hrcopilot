@@ -23,7 +23,7 @@ BRONNEN_INFO = {
         "art. 7:669 BW": "Regels omtrent beëindiging arbeidsovereenkomst door werkgever.",
     },
     "rijksoverheid.nl": {
-        "ontslagprocedure": "Beleid, toelichting en stappen rond ontslagprocedures."
+        "arbeidsrecht": "Algemene uitleg over arbeidsrecht en actuele regelgeving."
     },
     "uwv.nl": {
         "ontslagaanvraag": "Handleiding en formulieren bij ontslagaanvraag wegens langdurig verzuim."
@@ -75,6 +75,16 @@ def casus_complexiteit_score(keywords: list, juridische_begrippen: list) -> str:
     else:
         return "complex"
 
+def risico_inschatting(juridische_begrippen: list, kernwoorden: list) -> str:
+    """Bepaal het risiconiveau op basis van herkende begrippen."""
+
+    totaal = len(juridische_begrippen) + len(kernwoorden)
+    if totaal > 3:
+        return "hoog"
+    if totaal == 0:
+        return "laag"
+    return "matig"
+
 def bronnen_check(keywords: list, juridische_begrippen: list) -> dict:
     relevante_bronnen = {}
     for bron, artikelen in BRONNEN_INFO.items():
@@ -111,7 +121,7 @@ def generate_legal_advice(
     complexiteit: str,
     input_text: str,
     intern_beleid: Optional[str] = None
-) -> Tuple[str, str, List[str]]:
+) -> Tuple[str, str, List[str], str]:
     # Flexibele GPT-stijl adviezen
     if not kernwoorden and not juridische_begrippen:
         advies = (
@@ -123,7 +133,8 @@ def generate_legal_advice(
             "Mocht de situatie veranderen of aanvullende informatie beschikbaar komen, heroverweeg dan deze analyse."
         )
         vragen = genereer_vragen(kernwoorden, juridische_begrippen)
-        return advies, actieplan, vragen
+        risico = "laag"
+        return advies, actieplan, vragen, risico
 
     # Dynamisch advies op basis van context
     aandachtspunten = kernwoorden + juridische_begrippen
@@ -153,8 +164,9 @@ def generate_legal_advice(
     stappen.append("• Evalueer de situatie regelmatig en pas het plan waar nodig aan.")
 
     actieplan += "\n".join(stappen)
+    risico = risico_inschatting(juridische_begrippen, kernwoorden)
     vragen = genereer_vragen(kernwoorden, juridische_begrippen)
-    return advies, actieplan, vragen
+    return advies, actieplan, vragen, risico
 
 def legalcheck(
     file: Optional[UploadFile] = None,
@@ -178,7 +190,7 @@ def legalcheck(
     kernwoorden, juridische_begrippen = flexibele_begrippenherkenning(text)
     complexiteit = casus_complexiteit_score(kernwoorden, juridische_begrippen)
     bronnen = bronnen_check(kernwoorden, juridische_begrippen)
-    advies, actieplan, vragen = generate_legal_advice(
+    advies, actieplan, vragen, risico = generate_legal_advice(
         kernwoorden, juridische_begrippen, bronnen, complexiteit, text, intern_beleid
     )
 
@@ -197,6 +209,7 @@ def legalcheck(
             markdown += f"- **{bron}**: {wet} – {uitleg}\n"
     if not bronnen:
         markdown += "Geen specifieke bronnen gevonden.\n"
+    markdown += f"\n**Risico-inschatting:** {risico}\n"
     if intern_beleid:
         markdown += f"\n**Interne beleidsinformatie:**\n{intern_beleid}\n"
     if vragen:
@@ -213,5 +226,6 @@ def legalcheck(
         "actieplan": actieplan,
         "bronnen": bronnen,
         "verdiepende_vragen": vragen,
+        "risico": risico,
         "legal_markdown": markdown
     }
