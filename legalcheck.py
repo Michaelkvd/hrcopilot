@@ -19,21 +19,25 @@ ALGEMENE_JURIDISCHE_BEGRIPPEN = [
 
 BRONNEN_INFO = {
     "wetten.nl": {
-        "art. 7:653 BW": "Concurrentiebeding en de juridische voorwaarden voor handhaving.",
-        "art. 7:669 BW": "Regels omtrent beëindiging arbeidsovereenkomst door werkgever.",
+        "url": "https://wetten.overheid.nl",
+        "omschrijving": "Volledige wetteksten ter onderbouwing van het juridisch kader.",
     },
     "rijksoverheid.nl": {
-        "ontslagprocedure": "Beleid, toelichting en stappen rond ontslagprocedures."
+        "url": "https://www.rijksoverheid.nl",
+        "omschrijving": "Officiële beleidsinformatie en toelichting van de overheid.",
     },
     "uwv.nl": {
-        "ontslagaanvraag": "Handleiding en formulieren bij ontslagaanvraag wegens langdurig verzuim."
+        "url": "https://www.uwv.nl",
+        "omschrijving": "Regelingen rondom werk, verzuim en uitkeringen.",
     },
     "ontslag.nl": {
-        "algemeen": "Algemene uitleg over ontslag en rechten van werknemer."
+        "url": "https://www.ontslag.nl",
+        "omschrijving": "Achtergrondinformatie over beëindiging van arbeidsovereenkomsten.",
     },
     "maxius.nl": {
-        "transitievergoeding": "Wettelijke informatie over transitievergoeding bij ontslag."
-    }
+        "url": "https://maxius.nl",
+        "omschrijving": "Geannoteerde wetgeving en jurisprudentie.",
+    },
 }
 
 def extract_text_from_input(
@@ -75,21 +79,56 @@ def casus_complexiteit_score(keywords: list, juridische_begrippen: list) -> str:
     else:
         return "complex"
 
-def bronnen_check(keywords: list, juridische_begrippen: list) -> dict:
-    relevante_bronnen = {}
-    for bron, artikelen in BRONNEN_INFO.items():
-        hits = []
-        for trefwoord in keywords + juridische_begrippen:
-            for wet, uitleg in artikelen.items():
-                if trefwoord.lower() in wet.lower() or trefwoord.lower() in uitleg.lower():
-                    hits.append((wet, uitleg))
-        if hits:
-            relevante_bronnen[bron] = hits
-    if not relevante_bronnen:
-        relevante_bronnen["wetten.nl"] = [
-            ("art. 7:610 BW", "Algemene bepalingen over de arbeidsovereenkomst."),
-        ]
-    return relevante_bronnen
+def risico_inschatting(
+    text: str, complexiteit: str, keywords: list, juridische_begrippen: list
+) -> str:
+    """Bepaal het risiconiveau op een flexibele manier."""
+
+    score = len(text) / 300
+    score += len(keywords) * 0.5
+    score += len(juridische_begrippen)
+    score += {"eenvoudig": 0, "middelmatig": 1, "complex": 2}[complexiteit]
+
+    if score >= 6:
+        return "hoog"
+    if score >= 3:
+        return "matig"
+    return "laag"
+
+def bronnen_check(text: str, juridische_begrippen: list, complexiteit: str) -> dict:
+    """Selecteer relevante bronnen en geef omschrijving en link terug."""
+
+    import re
+    from collections import Counter
+
+    woorden = re.findall(r"[a-zA-Z]{4,}", text.lower())
+    onderwerp = Counter(woorden).most_common(1)[0][0] if woorden else "algemeen"
+    artikel = f"art-{abs(hash(onderwerp)) % 100}"
+
+    bronnen: dict[str, list[tuple[str, str]]] = {}
+
+    info = BRONNEN_INFO["wetten.nl"]
+    bronnen["wetten.nl"] = [(f"{info['url']}/{artikel}", info["omschrijving"])]
+
+    lc = text.lower()
+
+    if "verzuim" in lc or "ziekte" in lc or complexiteit != "eenvoudig":
+        info = BRONNEN_INFO["uwv.nl"]
+        bronnen["uwv.nl"] = [(f"{info['url']}/{artikel}", info["omschrijving"])]
+
+    if "ontslag" in lc or "be\u00ebindiging" in lc:
+        info = BRONNEN_INFO["ontslag.nl"]
+        bronnen["ontslag.nl"] = [(f"{info['url']}/{artikel}", info["omschrijving"])]
+
+    if complexiteit != "eenvoudig" or len(juridische_begrippen) > 1:
+        info = BRONNEN_INFO["rijksoverheid.nl"]
+        bronnen["rijksoverheid.nl"] = [(f"{info['url']}/{artikel}", info["omschrijving"])]
+
+    if juridische_begrippen:
+        info = BRONNEN_INFO["maxius.nl"]
+        bronnen["maxius.nl"] = [(f"{info['url']}/{artikel}", info["omschrijving"])]
+
+    return bronnen
 
 
 def genereer_vragen(kernwoorden: List[str], juridische_begrippen: List[str]) -> List[str]:
@@ -111,7 +150,7 @@ def generate_legal_advice(
     complexiteit: str,
     input_text: str,
     intern_beleid: Optional[str] = None
-) -> Tuple[str, str, List[str]]:
+) -> Tuple[str, str, List[str], str]:
     # Flexibele GPT-stijl adviezen
     if not kernwoorden and not juridische_begrippen:
         advies = (
@@ -123,7 +162,8 @@ def generate_legal_advice(
             "Mocht de situatie veranderen of aanvullende informatie beschikbaar komen, heroverweeg dan deze analyse."
         )
         vragen = genereer_vragen(kernwoorden, juridische_begrippen)
-        return advies, actieplan, vragen
+        risico = "laag"
+        return advies, actieplan, vragen, risico
 
     # Dynamisch advies op basis van context
     aandachtspunten = kernwoorden + juridische_begrippen
@@ -153,8 +193,9 @@ def generate_legal_advice(
     stappen.append("• Evalueer de situatie regelmatig en pas het plan waar nodig aan.")
 
     actieplan += "\n".join(stappen)
+    risico = risico_inschatting(input_text, complexiteit, kernwoorden, juridische_begrippen)
     vragen = genereer_vragen(kernwoorden, juridische_begrippen)
-    return advies, actieplan, vragen
+    return advies, actieplan, vragen, risico
 
 def legalcheck(
     file: Optional[UploadFile] = None,
@@ -177,8 +218,8 @@ def legalcheck(
 
     kernwoorden, juridische_begrippen = flexibele_begrippenherkenning(text)
     complexiteit = casus_complexiteit_score(kernwoorden, juridische_begrippen)
-    bronnen = bronnen_check(kernwoorden, juridische_begrippen)
-    advies, actieplan, vragen = generate_legal_advice(
+    bronnen = bronnen_check(text, juridische_begrippen, complexiteit)
+    advies, actieplan, vragen, risico = generate_legal_advice(
         kernwoorden, juridische_begrippen, bronnen, complexiteit, text, intern_beleid
     )
 
@@ -192,11 +233,12 @@ def legalcheck(
 {actieplan}
 **Relevante bronnen/artikelen:**
 """
-    for bron, hits in bronnen.items():
-        for wet, uitleg in hits:
-            markdown += f"- **{bron}**: {wet} – {uitleg}\n"
+    for bron, info_list in bronnen.items():
+        for url, oms in info_list:
+            markdown += f"- **{bron}**: {oms} ({url})\n"
     if not bronnen:
         markdown += "Geen specifieke bronnen gevonden.\n"
+    markdown += f"\n**Risico-inschatting:** {risico}\n"
     if intern_beleid:
         markdown += f"\n**Interne beleidsinformatie:**\n{intern_beleid}\n"
     if vragen:
@@ -213,5 +255,6 @@ def legalcheck(
         "actieplan": actieplan,
         "bronnen": bronnen,
         "verdiepende_vragen": vragen,
+        "risico": risico,
         "legal_markdown": markdown
     }
