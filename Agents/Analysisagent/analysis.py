@@ -11,8 +11,10 @@ RISK_LEVELS = ["laag", "matig", "verhoogd", "hoog"]
 
 
 def analyse_bestand(file: UploadFile, vraag: str) -> dict:
-    # Simplified placeholder analysis based on file size
+    """Analyse a single file based on size and return risk information."""
+
     contents = file.file.read()
+    file.file.seek(0)
     grootte = len(contents)
     risico_index = min(grootte % 4, 3)
     risico = RISK_LEVELS[risico_index]
@@ -46,18 +48,9 @@ def get_latest_cbs_quarter() -> str:
     """Return the most recent fully completed CBS quarter as ``YYYYKWX``."""
 
     today = datetime.now()
-    year = today.year
-    month = today.month
+    year, month = today.year, today.month
 
-    if 1 <= month <= 3:
-        quarter = 1
-    elif 4 <= month <= 6:
-        quarter = 2
-    elif 7 <= month <= 9:
-        quarter = 3
-    else:
-        quarter = 4
-
+    quarter = (month - 1) // 3 + 1
     if quarter == 1:
         return f"{year - 1}KW4"
     return f"{year}KW{quarter - 1}"
@@ -146,10 +139,7 @@ def analyse_verzuim(
 def analyse_meerdere(files: Iterable[Tuple[str, bytes]]) -> List[dict]:
     """Analyse multiple ``(filename, content)`` tuples."""
 
-    results: List[dict] = []
-    for filename, content in files:
-        results.append(analyse_verzuim(filename, content))
-    return results
+    return [analyse_verzuim(fn, data) for fn, data in files]
 
 
 def patroon_analyse(files: Iterable[Tuple[str, bytes]]) -> dict:
