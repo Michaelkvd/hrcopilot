@@ -18,6 +18,10 @@ TRIGGERS = {
     "vaststellingsovereenkomst",
     "arbeidsrecht",
     "beding",
+    # Synoniemen voor flexibele triggers
+    "casus",
+    "zaak",
+    "rechtsvraag",
 }
 
 
@@ -255,18 +259,11 @@ def legalcheck(
     intern_beleid: Optional[str] = None
 ) -> dict:
     text = extract_text_from_input(file=file, input_text=input_text)
+    status = "ok"
     if not text or len(text) < 20:
-        return {
-            "status": "onvoldoende input",
-            "advies": (
-                "De aangeleverde input is te beperkt om een juridische beoordeling te kunnen geven. "
-                "Lever meer context, een document of aanvullende informatie aan voor een grondige analyse."
-            ),
-            "actieplan": (
-                "Voeg een relevante brief, beleidsstuk of extra context toe zodat een gerichte analyse mogelijk is."
-            ),
-            "legal_markdown": "## Juridische Analyse\n**Status:** Onvoldoende input voor analyse.\n"
-        }
+        # Voer een beknopte analyse uit in plaats van direct te stoppen
+        status = "beperkte analyse"
+        text = text or (input_text or "casus")
 
     kernwoorden, juridische_begrippen = flexibele_begrippenherkenning(text)
     complexiteit = casus_complexiteit_score(kernwoorden, juridische_begrippen)
@@ -299,7 +296,7 @@ def legalcheck(
             markdown += f"- {q}\n"
 
     return {
-        "status": "ok",
+        "status": status,
         "herkenning_kernwoorden": kernwoorden,
         "herkenning_juridische_begrippen": juridische_begrippen,
         "complexiteit": complexiteit,

@@ -77,6 +77,17 @@ def test_legalcheck_accepts_msg_file(monkeypatch):
     assert data["herkenning_kernwoorden"]
 
 
+def test_legalcheck_short_input_fallback():
+    response = client.post(
+        "/legalcheck/",
+        data={"text": "ontslag"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "beperkte analyse"
+    assert "ontslag" in data["herkenning_kernwoorden"]
+
+
 def test_upload_route_pdf_output(tmp_path):
     response = client.post(
         "/upload/?formaat=pdf",
