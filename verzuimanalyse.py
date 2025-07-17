@@ -97,6 +97,10 @@ def analyse_verzuim(
     cbs_benchmark = haal_cbs_benchmark(periode)
     risico = bepaal_risico(verzuimpercentage)
     advies = genereer_aanbevelingen(risico)
+    beleidsadvies = (
+        f"Verzuimpercentage in team {sbi_code} is {verzuimpercentage}. "
+        "Overweeg teaminterventie of coachingsinzet."
+    )
 
     return {
         "filename": filename,
@@ -106,6 +110,7 @@ def analyse_verzuim(
         "cbs_benchmark": cbs_benchmark,
         "risico": risico,
         "advies": advies,
+        "beleidsadvies": beleidsadvies,
         "resultaat": "Analyse nog niet geïmplementeerd",
     }
 
@@ -116,6 +121,17 @@ def analyse_meerdere(files: Iterable[Tuple[str, bytes]]) -> List[dict]:
     for filename, content in files:
         results.append(analyse_verzuim(filename, content))
     return results
+
+
+def patroon_analyse(files: Iterable[Tuple[str, bytes]]) -> dict:
+    maanden = len(files)
+    frequentie = sum(len(c) for _, c in files) % 10
+    langdurig = [name for name, c in files if len(c) % 5 == 0]
+    return {
+        "maanden": maanden,
+        "meldingsfrequentie": frequentie,
+        "langdurige_dossiers": langdurig,
+    }
 
 def genereer_pdf(markdown: str) -> bytes:
     """Render markdown to PDF and return the binary data."""
