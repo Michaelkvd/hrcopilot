@@ -19,7 +19,7 @@ De API definieert twee endpoints in `main.py`:
 - `POST /upload/` – verzuimanalyse van een enkel bestand. Gebruik de query
   parameter `formaat=pdf` of `formaat=grafiek` om respectievelijk een PDF-rapport
   of PNG-grafiek te ontvangen.
-- `POST /legalcheck/` – juridische analyse van een bestand of tekst.
+- `POST /legalcheck/` – juridische analyse van tekst of (optioneel) een bestand.
 
 ## Installatie en starten
 

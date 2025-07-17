@@ -13,7 +13,6 @@ def test_upload_route_returns_analysis_dict(tmp_path):
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == "dummy.txt"
-    assert data["sbi_code"] == "6420"
     assert "KW" in data["periode"]
     assert "risico" in data
     assert "advies" in data
@@ -33,19 +32,21 @@ def test_batch_upload_returns_list_of_dicts(tmp_path):
     for item in data:
         assert {
             "filename",
-            "sbi_code",
             "periode",
             "resultaat",
             "risico",
             "advies",
             "verzuimpercentage",
-            "cbs_benchmark",
+            "branche_benchmark",
         }.issubset(item.keys())
 
 
 def test_legalcheck_route_with_keywords(tmp_path):
     text = "Dit document gaat over ontslag en verzuim en heeft voldoende lengte."
-    response = client.post("/legalcheck/", files={"file": ("dummy.txt", text.encode(), "text/plain")})
+    response = client.post(
+        "/legalcheck/",
+        data={"text": text},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
