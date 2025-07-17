@@ -69,8 +69,51 @@ async def batch_upload(
     return JSONResponse(content=result)
 
 @app.post("/legalcheck/")
-async def upload_legal(file: UploadFile = File(...)):
-    result = legalcheck(file)
+async def upload_legal(
+    file: UploadFile = File(None), text: Optional[str] = Form(None)
+):
+    result = legalcheck(file=file, input_text=text)
+    return JSONResponse(content=result)
+
+
+@app.post("/analyse/")
+async def analyse(file: UploadFile = File(...), vraag: str = "", formaat: str = "json"):
+    result = analyse_bestand(file, vraag)
+    log_gebruik("user", "analyse")
+    mime, data = genereer_rapport(result, formaat)
+    if mime != "application/json":
+        return StreamingResponse(BytesIO(data), media_type=mime)
+    return JSONResponse(content=result)
+
+
+@app.post("/spp/")
+async def spp(file: UploadFile = File(...), formaat: str = "excel"):
+    result = analyse_spp(file)
+    log_spp("user", "spp")
+    if formaat == "json":
+        return JSONResponse(content=result)
+    buf = genereer_spp_rapport(result, formaat)
+    media = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        if formaat == "excel"
+        else "text/csv"
+    )
+    return StreamingResponse(buf, media_type=media)
+
+
+@app.post("/feedback/")
+async def feedback(gebruiker: str = Form(...), bericht: str = Form(...)):
+    if gebruiker != ADMIN_USER:
+        return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
+    result = store_feedback(gebruiker, bericht)
+    return JSONResponse(content=result)
+
+
+@app.post("/log/")
+async def log(gebruiker: str = Form(...), actie: str = Form(...)):
+    if gebruiker != ADMIN_USER:
+        return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
+    result = registreer_gebruik(gebruiker, actie)
     return JSONResponse(content=result)
 
 

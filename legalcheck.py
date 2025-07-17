@@ -4,6 +4,9 @@ from typing import List, Optional, Tuple
 import tempfile
 import os
 import extract_msg
+from io import BytesIO
+import pandas as pd
+from pptx import Presentation
 
 KEYWORDS = [
     "ontslag", "verzuim", "vso", "vaststellingsovereenkomst", "brief",
@@ -55,13 +58,12 @@ def extract_text_from_input(
     if input_text and len(input_text) > 20:
         return input_text
     if file:
-        if file.filename.endswith((".pdf", ".docx", ".doc", ".txt", ".eml")):
-            try:
+        fname = file.filename.lower()
+        try:
+            if fname.endswith((".pdf", ".docx", ".doc", ".txt", ".eml")):
                 return file.file.read().decode("utf-8", errors="ignore")
-            except Exception:
-                return ""
-        if file.filename.endswith(".msg"):
-            try:
+
+            if fname.endswith(".msg"):
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".msg") as tmp:
                     tmp.write(file.file.read())
                     tmp.flush()
@@ -69,8 +71,30 @@ def extract_text_from_input(
                     text = f"{msg.subject}\n{msg.body}" if msg.body else msg.subject
                 os.unlink(tmp.name)
                 return text or ""
-            except Exception:
-                return ""
+
+            if fname.endswith((".xlsx", ".xls", ".csv")):
+                buf = BytesIO(file.file.read())
+                buf.seek(0)
+                try:
+                    df = pd.read_excel(buf)
+                except Exception:
+                    buf.seek(0)
+                    df = pd.read_csv(buf)
+                return " ".join(df.astype(str).stack().tolist())
+
+            if fname.endswith((".ppt", ".pptx")):
+                buf = BytesIO(file.file.read())
+                prs = Presentation(buf)
+                slides_text = []
+                for slide in prs.slides:
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text"):
+                            slides_text.append(shape.text)
+                return "\n".join(slides_text)
+
+            return file.file.read().decode("utf-8", errors="ignore")
+        except Exception:
+            return ""
     return ""
 
 def flexibele_begrippenherkenning(text: str) -> Tuple[list, list]:
@@ -99,7 +123,6 @@ def risico_inschatting(
     score += len(keywords) * 0.5
     score += len(juridische_begrippen)
     score += {"eenvoudig": 0, "middelmatig": 1, "complex": 2}[complexiteit]
-
     if score >= 6:
         return "hoog"
     if score >= 3:
@@ -140,7 +163,7 @@ def bronnen_check(text: str, juridische_begrippen: list, complexiteit: str) -> d
         bronnen["maxius.nl"] = [(f"{info['url']}/{artikel}", info["omschrijving"])]
 
     return bronnen
-
+  
 def risico_inschatting(juridische_begrippen: list) -> str:
     niveaus = [RISICO_NIVEAUS.get(b, "laag") for b in juridische_begrippen]
     if "hoog" in niveaus:
@@ -228,7 +251,6 @@ def generate_legal_advice(
 
     actieplan += "\n".join(stappen)
     risico = risico_inschatting(input_text, complexiteit, kernwoorden, juridische_begrippen)
-    risico = risico_inschatting(juridische_begrippen)
     vragen = genereer_vragen(kernwoorden, juridische_begrippen)
     return advies, actieplan, vragen, risico
 
@@ -254,7 +276,6 @@ def legalcheck(
     kernwoorden, juridische_begrippen = flexibele_begrippenherkenning(text)
     complexiteit = casus_complexiteit_score(kernwoorden, juridische_begrippen)
     bronnen = bronnen_check(text, juridische_begrippen, complexiteit)
-    bronnen = bronnen_check(kernwoorden, juridische_begrippen)
     advies, actieplan, vragen, risico = generate_legal_advice(
         kernwoorden, juridische_begrippen, bronnen, complexiteit, text, intern_beleid
     )

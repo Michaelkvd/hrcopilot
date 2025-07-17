@@ -43,7 +43,10 @@ def test_batch_upload_returns_list_of_dicts(tmp_path):
 
 def test_legalcheck_route_with_keywords(tmp_path):
     text = "Dit document gaat over ontslag en verzuim en heeft voldoende lengte."
-    response = client.post("/legalcheck/", files={"file": ("dummy.txt", text.encode(), "text/plain")})
+    response = client.post(
+        "/legalcheck/",
+        data={"text": text},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
