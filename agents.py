@@ -38,10 +38,25 @@ class AbsenceAgent(BaseAgent):
     def match_terms(cls, text: str) -> bool:
         return absence_match(text)
 
-    def analyse(self, file: UploadFile, periode: Optional[str] = None) -> dict:
-        contents = file.file.read()
-        file.file.seek(0)
-        return analysis_mod.analyse_verzuim(file.filename, contents, periode=periode)
+    def analyse(
+        self,
+        file: Optional[UploadFile] = None,
+        text: Optional[str] = None,
+        periode: Optional[str] = None,
+    ) -> dict:
+        """Analyseer een verzuimdocument of tekst."""
+
+        if file is None and text is None:
+            raise ValueError("file of text verplicht")
+
+        if file is not None:
+            contents = file.file.read()
+            file.file.seek(0)
+            filename = file.filename
+        else:
+            contents = text.encode()
+            filename = "tekst-input"
+        return analysis_mod.analyse_verzuim(filename, contents, periode=periode)
 
     def analyse_batch(self, files: List[UploadFile], periode: Optional[str] = None) -> List[dict]:
         items: List[Tuple[str, bytes]] = []

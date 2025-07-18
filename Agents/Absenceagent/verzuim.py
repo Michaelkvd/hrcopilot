@@ -32,3 +32,12 @@ def beantwoord_vraag(vraag: str, dossier: Optional[str] = None) -> str:
         "Elke situatie is uniek. Bespreek de casus met de medewerker en overweeg "
         "consultatie van de arbodienst of jurist voor passend advies."
     )
+
+
+def analyse_tekst(text: str, periode: Optional[str] = None) -> dict:
+    """Analyseer tekstuele input als ware het een document."""
+
+    from Agents.Analysisagent import analysis as analysis_mod
+
+    contents = text.encode()
+    return analysis_mod.analyse_verzuim("tekst-input", contents, periode=periode)
