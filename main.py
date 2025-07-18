@@ -12,11 +12,14 @@ main_agent = MainAgent()
 
 @app.post("/upload/")
 async def upload_file(
-    file: UploadFile = File(...),
+    file: UploadFile = File(None),
+    text: Optional[str] = Form(None),
     periode: Optional[str] = None,
     formaat: Optional[str] = "json",
 ):
-    result = main_agent.absence.analyse(file, periode)
+    result = main_agent.absence.analyse(file=file, text=text, periode=periode)
+    if result.get("status") == "geen input":
+        return JSONResponse(content=result)
     if formaat == "pdf":
         markdown = (
             f"# Verzuimrapport\n"

@@ -38,10 +38,28 @@ class AbsenceAgent(BaseAgent):
     def match_terms(cls, text: str) -> bool:
         return absence_match(text)
 
-    def analyse(self, file: UploadFile, periode: Optional[str] = None) -> dict:
-        contents = file.file.read()
-        file.file.seek(0)
-        return analysis_mod.analyse_verzuim(file.filename, contents, periode=periode)
+    def analyse(
+        self,
+        file: Optional[UploadFile] = None,
+        text: Optional[str] = None,
+        periode: Optional[str] = None,
+    ) -> dict:
+        """Analyseer een verzuimdocument of tekst."""
+
+        if file is None and text is None:
+            return {
+                "status": "geen input",
+                "advies": "Geen gegevens ontvangen voor analyse.",
+            }
+
+        if file is not None:
+            contents = file.file.read()
+            file.file.seek(0)
+            filename = file.filename
+        else:
+            contents = text.encode()
+            filename = "tekst-input"
+        return analysis_mod.analyse_verzuim(filename, contents, periode=periode)
 
     def analyse_batch(self, files: List[UploadFile], periode: Optional[str] = None) -> List[dict]:
         items: List[Tuple[str, bytes]] = []
@@ -87,7 +105,7 @@ class AnalysisAgent(BaseAgent):
     def analyse_spp(self, file: Optional[UploadFile], text: Optional[str], formaat: str) -> Tuple[str, bytes | dict, str]:
         result = analysis_mod.analyse_spp(file=file, text=text)
         analysis_mod.log_spp("user", "spp")
-        if formaat == "json":
+        if result.get("status") == "geen input" or formaat == "json":
             return "application/json", result, "json"
         buf = analysis_mod.genereer_spp_rapport(result, formaat)
         media = (
