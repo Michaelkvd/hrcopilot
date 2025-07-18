@@ -52,6 +52,8 @@ class AbsenceAgent(BaseAgent):
                 "advies": "Geen gegevens ontvangen voor analyse.",
             }
 
+            raise ValueError("file of text verplicht")
+
         if file is not None:
             contents = file.file.read()
             file.file.seek(0)

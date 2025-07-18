@@ -20,6 +20,9 @@ async def upload_file(
     result = main_agent.absence.analyse(file=file, text=text, periode=periode)
     if result.get("status") == "geen input":
         return JSONResponse(content=result)
+    if file is None and text is None:
+        return JSONResponse(status_code=400, content={"error": "file of text vereist"})
+    result = main_agent.absence.analyse(file=file, text=text, periode=periode)
     if formaat == "pdf":
         markdown = (
             f"# Verzuimrapport\n"
