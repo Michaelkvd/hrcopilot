@@ -99,3 +99,10 @@ def test_legalcheck_risk_and_sources():
     for hits in data["bronnen"].values():
         for url, _ in hits:
             assert url.startswith("http")
+
+
+def test_spp_route_no_input():
+    response = client.post("/spp/?formaat=json")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "geen input"

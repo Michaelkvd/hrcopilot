@@ -240,7 +240,13 @@ def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -
     elif text is not None:
         df = pd.read_csv(StringIO(text))
     else:
-        raise ValueError("Geen input opgegeven")
+        return {
+            "status": "geen input",
+            "grid": {},
+            "risico": "onbekend",
+            "acties": [],
+            "adviezen": [],
+        }
 
     grid_keys = [
         "laag_potentieel_lage_prestatie",

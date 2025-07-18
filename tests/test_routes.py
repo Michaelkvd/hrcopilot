@@ -116,3 +116,10 @@ def test_upload_route_text_input():
     data = response.json()
     assert data["filename"] == "tekst-input"
 
+
+def test_upload_route_no_input():
+    response = client.post("/upload/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "geen input"
+

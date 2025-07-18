@@ -47,6 +47,11 @@ class AbsenceAgent(BaseAgent):
         """Analyseer een verzuimdocument of tekst."""
 
         if file is None and text is None:
+            return {
+                "status": "geen input",
+                "advies": "Geen gegevens ontvangen voor analyse.",
+            }
+
             raise ValueError("file of text verplicht")
 
         if file is not None:
@@ -102,7 +107,7 @@ class AnalysisAgent(BaseAgent):
     def analyse_spp(self, file: Optional[UploadFile], text: Optional[str], formaat: str) -> Tuple[str, bytes | dict, str]:
         result = analysis_mod.analyse_spp(file=file, text=text)
         analysis_mod.log_spp("user", "spp")
-        if formaat == "json":
+        if result.get("status") == "geen input" or formaat == "json":
             return "application/json", result, "json"
         buf = analysis_mod.genereer_spp_rapport(result, formaat)
         media = (
