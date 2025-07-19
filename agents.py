@@ -13,6 +13,8 @@ class BaseAgent:
 
 from fastapi import UploadFile
 from typing import List, Optional, Tuple
+from pathlib import Path
+from utils import Memory
 from Agents.Analysisagent import analysis as analysis_mod
 from Agents.Analysisagent.analysis import TRIGGERS as ANALYSIS_TRIGGERS, match_terms as analysis_match
 from Agents.Legalagent.legalcheck import (
@@ -95,6 +97,10 @@ class AbsenceAgent(BaseAgent):
         result = self.analyse(file=file, text=text, periode=periode)
         if context is not None:
             context["absence"] = result
+        if self.orchestrator:
+            self.orchestrator.memory.add(
+                kw.get("user", "anon"), {"absence_result": result}
+            )
         return result
 
 
@@ -118,6 +124,10 @@ class LegalAgent(BaseAgent):
         result = self.analyse(file=file, text=text, intern_beleid=intern_beleid)
         if context and "absence" in context:
             result["verzuim"] = context["absence"]
+        if self.orchestrator:
+            self.orchestrator.memory.add(
+                kw.get("user", "anon"), {"legal_result": result}
+            )
         return result
 
 
@@ -156,6 +166,10 @@ class AnalysisAgent(BaseAgent):
         if file is None:
             return {"status": "geen bestand"}
         mime, data, result = self.analyse(file, vraag, formaat)
+        if self.orchestrator:
+            self.orchestrator.memory.add(
+                kw.get("user", "anon"), {"analysis_result": result}
+            )
         return {"mime": mime, "result": result}
 
 
@@ -182,16 +196,23 @@ class FeedbackAgent(BaseAgent):
 
     def handle(self, *, gebruiker=None, bericht=None, actie=None, context=None, **kw):
         if bericht is not None:
-            return self.store(gebruiker or "anon", bericht)
+            result = self.store(gebruiker or "anon", bericht)
+            if self.orchestrator:
+                self.orchestrator.memory.add(gebruiker or "anon", {"feedback": bericht})
+            return result
         if actie is not None:
-            return self.log(gebruiker or "anon", actie)
+            result = self.log(gebruiker or "anon", actie)
+            if self.orchestrator:
+                self.orchestrator.memory.add(gebruiker or "anon", {"log": actie})
+            return result
         return {"status": "geen feedback"}
 
 
 class MainAgent:
     """Orchestrator die automatisch de juiste agent(en) aanroept."""
 
-    def __init__(self):
+    def __init__(self, memory_path: Optional[Path] = None):
+        self.memory = Memory(memory_path)
         self.absence = AbsenceAgent(self)
         self.legal = LegalAgent(self)
         self.analysis = AnalysisAgent(self)
@@ -205,13 +226,17 @@ class MainAgent:
                 return agent
         return None
 
-    def auto_route(self, text: str, **kwargs) -> dict:
+    def auto_route(self, text: str, user: str | None = None, **kwargs) -> dict:
         """Voer automatisch alle passende agents uit op basis van ``text``."""
         context = {}
         for agent in self.agents:
             if agent.match_terms(text):
-                context[agent.name] = agent.handle(text=text, **kwargs, context=context)
+                context[agent.name] = agent.handle(
+                    text=text, **kwargs, context=context, user=user
+                )
         if not context:
             context["status"] = "geen match"
+        if user:
+            self.memory.add(user, {"input": text, "output": context})
         return context
 

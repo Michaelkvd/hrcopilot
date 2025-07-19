@@ -108,5 +108,6 @@ async def auto_route(
         actie=actie,
         periode=periode,
         formaat=formaat,
+        user=gebruiker,
     )
     return JSONResponse(content=result)
