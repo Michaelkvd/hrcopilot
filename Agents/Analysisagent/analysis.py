@@ -1,5 +1,6 @@
 from fastapi import UploadFile
 from typing import Iterable, List, Tuple, Optional, Dict
+from utils import text_matches
 import pandas as pd
 from io import BytesIO, StringIO
 from datetime import datetime
@@ -29,8 +30,7 @@ TRIGGERS = {
 
 def match_terms(text: str) -> bool:
     """Return ``True`` if the text lijkt te gaan over data- of dossieranalyse."""
-    lower = text.lower()
-    return any(t in lower for t in TRIGGERS)
+    return text_matches(text, TRIGGERS)
 
 
 def _safe_read(file: UploadFile) -> bytes:

@@ -1,6 +1,7 @@
 
 from fastapi import UploadFile
 from typing import List, Optional, Tuple
+from utils import text_matches
 import tempfile
 import os
 import extract_msg
@@ -33,8 +34,7 @@ TRIGGERS = {
 
 def match_terms(text: str) -> bool:
     """Return ``True`` if juridische thema's vermoed worden in ``text``."""
-    lower = text.lower()
-    return any(t in lower for t in TRIGGERS)
+    return text_matches(text, TRIGGERS)
 
 KEYWORDS = [
     "ontslag", "verzuim", "vso", "vaststellingsovereenkomst", "brief",

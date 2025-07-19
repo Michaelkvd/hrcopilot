@@ -1,6 +1,8 @@
 """Functies voor het behandelen van verzuimcasuïstiek en vragen."""
 from typing import Optional
 
+from utils import text_matches
+
 # Kernwoorden die semantisch gerelateerd zijn aan verzuim. Worden gebruikt om
 # te bepalen of deze module relevant is voor een binnengekomen vraag.
 TRIGGERS = {
@@ -17,8 +19,7 @@ TRIGGERS = {
 
 def match_terms(text: str) -> bool:
     """Return ``True`` if the text is gerelateerd aan verzuim."""
-    lower = text.lower()
-    return any(t in lower for t in TRIGGERS)
+    return text_matches(text, TRIGGERS)
 
 
 def beantwoord_vraag(vraag: str, dossier: Optional[str] = None) -> str:
