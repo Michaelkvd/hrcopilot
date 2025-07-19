@@ -86,3 +86,29 @@ async def log(gebruiker: str = Form(...), actie: str = Form(...)):
         return JSONResponse(status_code=403, content={"error": "alleen beheerder"})
     result = main_agent.feedback.log(gebruiker, actie)
     return JSONResponse(content=result)
+
+
+@app.post("/auto/")
+async def auto_route(
+    text: str = Form(""),
+    file: UploadFile | None = File(None),
+    vraag: str = Form(""),
+    intern_beleid: str | None = Form(None),
+    gebruiker: str | None = Form(None),
+    bericht: str | None = Form(None),
+    actie: str | None = Form(None),
+    periode: str | None = Form(None),
+    formaat: str = "json",
+):
+    result = main_agent.auto_route(
+        text,
+        file=file,
+        vraag=vraag,
+        intern_beleid=intern_beleid,
+        gebruiker=gebruiker,
+        bericht=bericht,
+        actie=actie,
+        periode=periode,
+        formaat=formaat,
+    )
+    return JSONResponse(content=result)
