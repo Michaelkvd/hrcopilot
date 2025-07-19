@@ -6,6 +6,12 @@ from datetime import datetime
 import random
 from utils.file_utils import append_row, LOG_FILE
 
+# Disclaimer voor gebruikers van analysetools
+ANALYSE_DISCLAIMER = (
+    "Dit resultaat vormt een algemeen advies op basis van de ingevoerde gegevens. "
+    "Het is niet bindend en kan geen individueel consult vervangen."
+)
+
 # Kernwoorden die verwijzen naar algemene analysefuncties. Deze lijst wordt
 # gebruikt om op basis van semantiek het juiste onderdeel aan te roepen.
 TRIGGERS = {
@@ -61,6 +67,7 @@ def analyse_bestand(file: UploadFile, vraag: str) -> dict:
         "risico": risico,
         "scenario": scenario,
         "aanbevelingen": aanbevelingen,
+        "disclaimer": ANALYSE_DISCLAIMER,
     }
 
 
@@ -166,6 +173,7 @@ def analyse_verzuim(
         "advies": advies,
         "beleidsadvies": beleidsadvies,
         "resultaat": "Analyse nog niet geïmplementeerd",
+        "disclaimer": ANALYSE_DISCLAIMER,
     }
 
 
@@ -246,6 +254,7 @@ def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -
             "risico": "onbekend",
             "acties": [],
             "adviezen": [],
+            "disclaimer": ANALYSE_DISCLAIMER,
         }
 
     grid_keys = [
@@ -299,6 +308,7 @@ def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -
         "risico": risico,
         "acties": acties,
         "adviezen": adviezen,
+        "disclaimer": ANALYSE_DISCLAIMER,
     }
 
 

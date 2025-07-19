@@ -8,6 +8,12 @@ from io import BytesIO
 import pandas as pd
 from pptx import Presentation
 
+# Disclaimer voor juridische adviezen
+LEGAL_DISCLAIMER = (
+    "Dit resultaat is een algemeen juridisch advies op basis van de aangeleverde informatie. "
+    "Het is niet bindend en vervangt geen individueel consult met een specialist."
+)
+
 # Flexibele sleutelwoorden die de juridische module kunnen activeren.
 TRIGGERS = {
     "juridisch",
@@ -294,6 +300,7 @@ def legalcheck(
         markdown += "\n**Vervolgvragen:**\n"
         for q in vragen:
             markdown += f"- {q}\n"
+    markdown += f"\n**Disclaimer:** {LEGAL_DISCLAIMER}\n"
 
     return {
         "status": status,
@@ -305,5 +312,6 @@ def legalcheck(
         "bronnen": bronnen,
         "verdiepende_vragen": vragen,
         "risico": risico,
-        "legal_markdown": markdown
+        "legal_markdown": markdown,
+        "disclaimer": LEGAL_DISCLAIMER,
     }
