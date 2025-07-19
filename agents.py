@@ -1,7 +1,13 @@
 class BaseAgent:
     """Simple base class for all agents."""
 
+    name: str = "base"
+
+    def __init__(self, orchestrator=None):
+        self.orchestrator = orchestrator
+
     def handle(self, *args, **kwargs):
+        """Handle a generic request and return a result."""
         raise NotImplementedError
 
 
@@ -32,7 +38,13 @@ from Agents.Absenceagent.verzuim import (
 
 
 class AbsenceAgent(BaseAgent):
+    """Agent voor verzuimgerelateerde acties."""
+
+    name = "absence"
     TRIGGERS = ABSENCE_TRIGGERS
+
+    def __init__(self, orchestrator=None):
+        super().__init__(orchestrator)
 
     @classmethod
     def match_terms(cls, text: str) -> bool:
@@ -51,8 +63,6 @@ class AbsenceAgent(BaseAgent):
                 "status": "geen input",
                 "advies": "Geen gegevens ontvangen voor analyse.",
             }
-
-            raise ValueError("file of text verplicht")
 
         if file is not None:
             contents = file.file.read()
@@ -79,9 +89,23 @@ class AbsenceAgent(BaseAgent):
     def chart(self, data: dict):
         return analysis_mod.genereer_grafiek(data)
 
+    def handle(self, *, file=None, text=None, periode=None, context=None, **kw):
+        if file is None and not text:
+            return {"status": "geen input"}
+        result = self.analyse(file=file, text=text, periode=periode)
+        if context is not None:
+            context["absence"] = result
+        return result
+
 
 class LegalAgent(BaseAgent):
+    """Agent voor juridische controles."""
+
+    name = "legal"
     TRIGGERS = LEGAL_TRIGGERS
+
+    def __init__(self, orchestrator=None):
+        super().__init__(orchestrator)
 
     @classmethod
     def match_terms(cls, text: str) -> bool:
@@ -90,9 +114,21 @@ class LegalAgent(BaseAgent):
     def analyse(self, file: Optional[UploadFile] = None, text: Optional[str] = None, intern_beleid: Optional[str] = None) -> dict:
         return legalcheck(file=file, input_text=text, intern_beleid=intern_beleid)
 
+    def handle(self, *, file=None, text=None, intern_beleid=None, context=None, **kw):
+        result = self.analyse(file=file, text=text, intern_beleid=intern_beleid)
+        if context and "absence" in context:
+            result["verzuim"] = context["absence"]
+        return result
+
 
 class AnalysisAgent(BaseAgent):
+    """Agent voor algemene data-analyse."""
+
+    name = "analysis"
     TRIGGERS = ANALYSIS_TRIGGERS
+
+    def __init__(self, orchestrator=None):
+        super().__init__(orchestrator)
 
     @classmethod
     def match_terms(cls, text: str) -> bool:
@@ -116,11 +152,23 @@ class AnalysisAgent(BaseAgent):
         )
         return media, buf.getvalue(), "bytes"
 
+    def handle(self, *, file=None, text=None, vraag="", formaat="json", context=None, **kw):
+        if file is None:
+            return {"status": "geen bestand"}
+        mime, data, result = self.analyse(file, vraag, formaat)
+        return {"mime": mime, "result": result}
+
 
 
 
 class FeedbackAgent(BaseAgent):
+    """Agent voor feedback en logging."""
+
+    name = "feedback"
     TRIGGERS = FEEDBACK_TRIGGERS | LOG_TRIGGERS
+
+    def __init__(self, orchestrator=None):
+        super().__init__(orchestrator)
 
     @classmethod
     def match_terms(cls, text: str) -> bool:
@@ -132,23 +180,38 @@ class FeedbackAgent(BaseAgent):
     def log(self, gebruiker: str, actie: str) -> dict:
         return registreer_gebruik(gebruiker, actie)
 
+    def handle(self, *, gebruiker=None, bericht=None, actie=None, context=None, **kw):
+        if bericht is not None:
+            return self.store(gebruiker or "anon", bericht)
+        if actie is not None:
+            return self.log(gebruiker or "anon", actie)
+        return {"status": "geen feedback"}
+
 
 class MainAgent:
+    """Orchestrator die automatisch de juiste agent(en) aanroept."""
+
     def __init__(self):
-        self.absence = AbsenceAgent()
-        self.legal = LegalAgent()
-        self.analysis = AnalysisAgent()
-        self.feedback = FeedbackAgent()
+        self.absence = AbsenceAgent(self)
+        self.legal = LegalAgent(self)
+        self.analysis = AnalysisAgent(self)
+        self.feedback = FeedbackAgent(self)
+        self.agents = [self.legal, self.absence, self.analysis, self.feedback]
 
     def detect_agent(self, text: str) -> Optional[BaseAgent]:
         """Kies een agent op basis van semantische triggers."""
-        if self.legal.match_terms(text):
-            return self.legal
-        if self.absence.match_terms(text):
-            return self.absence
-        if self.analysis.match_terms(text):
-            return self.analysis
-        if self.feedback.match_terms(text):
-            return self.feedback
+        for agent in self.agents:
+            if agent.match_terms(text):
+                return agent
         return None
+
+    def auto_route(self, text: str, **kwargs) -> dict:
+        """Voer automatisch alle passende agents uit op basis van ``text``."""
+        context = {}
+        for agent in self.agents:
+            if agent.match_terms(text):
+                context[agent.name] = agent.handle(text=text, **kwargs, context=context)
+        if not context:
+            context["status"] = "geen match"
+        return context
 
