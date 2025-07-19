@@ -1,4 +1,5 @@
 from utils.file_utils import append_row, FEEDBACK_FILE
+from utils import text_matches
 
 # Termen die gebruikt kunnen worden om feedback- of logfunctionaliteit op te roepen.
 TRIGGERS = {
@@ -13,8 +14,7 @@ TRIGGERS = {
 
 def match_terms(text: str) -> bool:
     """Return ``True`` if the text lijkt betrekking te hebben op feedback of logging."""
-    lower = text.lower()
-    return any(t in lower for t in TRIGGERS)
+    return text_matches(text, TRIGGERS)
 
 
 def store_feedback(user: str, feedback: str):
