@@ -64,3 +64,7 @@ pytest
 ## Privacyverklaring
 
 Zie `privacyverklaring.txt` voor een toelichting op het tijdelijke gebruik van geüploade documenten. Er worden geen gegevens opgeslagen of gedeeld met derden.
+
+## Disclaimer
+
+De resultaten van deze applicatie vormen algemeen HR- en juridisch advies op basis van de aangeleverde gegevens. Ze zijn niet bindend en kunnen een individueel consult bij een specialist niet vervangen. De ontwikkelaars aanvaarden geen aansprakelijkheid voor handelingen die worden verricht naar aanleiding van de output. Gebruik geen vertrouwelijke persoonsgegevens en volg de privacyverklaring.

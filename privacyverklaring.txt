@@ -3,3 +3,4 @@ Privacyverklaring Verzuimanalyse Module
 Deze applicatie verwerkt documenten enkel tijdelijk voor analyse. 
 Er worden geen gegevens opgeslagen of gedeeld met derden. 
 Gebruikers zijn verantwoordelijk voor het anonimiseren van gevoelige informatie.
+Het resultaat van de analysetools vormt een algemeen HR- en juridisch advies. Het is niet bindend en kan geen persoonlijke beoordeling door een professional vervangen. De gebruiker blijft zelf verantwoordelijk voor naleving van toepasselijke wet- en regelgeving.
