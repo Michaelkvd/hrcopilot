@@ -37,6 +37,11 @@ from Agents.Absenceagent.verzuim import (
     TRIGGERS as ABSENCE_TRIGGERS,
     match_terms as absence_match,
 )
+from Agents.Complianceagent.compliance import (
+    compliance_check,
+    TRIGGERS as COMPLIANCE_TRIGGERS,
+    match_terms as compliance_match,
+)
 
 
 class AbsenceAgent(BaseAgent):
@@ -173,6 +178,31 @@ class AnalysisAgent(BaseAgent):
         return {"mime": mime, "result": result}
 
 
+class ComplianceAgent(BaseAgent):
+    """Agent voor compliancecontroles."""
+
+    name = "compliance"
+    TRIGGERS = COMPLIANCE_TRIGGERS
+
+    def __init__(self, orchestrator=None):
+        super().__init__(orchestrator)
+
+    @classmethod
+    def match_terms(cls, text: str) -> bool:
+        return compliance_match(text)
+
+    def analyse(self, file: Optional[UploadFile] = None, text: Optional[str] = None) -> dict:
+        return compliance_check(file=file, text=text)
+
+    def handle(self, *, file=None, text=None, context=None, **kw):
+        result = self.analyse(file=file, text=text)
+        if self.orchestrator:
+            self.orchestrator.memory.add(
+                kw.get("user", "anon"), {"compliance_result": result}
+            )
+        return result
+
+
 
 
 class FeedbackAgent(BaseAgent):
@@ -216,8 +246,15 @@ class MainAgent:
         self.absence = AbsenceAgent(self)
         self.legal = LegalAgent(self)
         self.analysis = AnalysisAgent(self)
+        self.compliance = ComplianceAgent(self)
         self.feedback = FeedbackAgent(self)
-        self.agents = [self.legal, self.absence, self.analysis, self.feedback]
+        self.agents = [
+            self.legal,
+            self.absence,
+            self.analysis,
+            self.compliance,
+            self.feedback,
+        ]
 
     def detect_agent(self, text: str) -> Optional[BaseAgent]:
         """Kies een agent op basis van semantische triggers."""

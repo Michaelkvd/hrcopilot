@@ -54,6 +54,12 @@ async def upload_legal(file: UploadFile = File(None), text: Optional[str] = Form
     return JSONResponse(content=result)
 
 
+@app.post("/compliance/")
+async def compliance(file: UploadFile = File(None), text: Optional[str] = Form(None)):
+    result = main_agent.compliance.analyse(file=file, text=text)
+    return JSONResponse(content=result)
+
+
 @app.post("/analyse/")
 async def analyse(file: UploadFile = File(...), vraag: str = "", formaat: str = "json"):
     mime, data, result = main_agent.analysis.analyse(file, vraag, formaat)

@@ -123,3 +123,13 @@ def test_upload_route_no_input():
     data = response.json()
     assert data["status"] == "geen input"
 
+
+def test_compliance_route_detects_terms():
+    text = "Dit beleid beschrijft omgang met persoonsgegevens 123456789 en AVG"
+    response = client.post("/compliance/", data={"text": text})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] in {"ok", "geen bijzonderheden"}
+    assert "privacy" in data["gevonden_termen"] or "avg" in data["gevonden_termen"]
+    assert data["gevonden_pii"]
+
