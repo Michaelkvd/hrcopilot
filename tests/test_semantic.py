@@ -11,3 +11,9 @@ def test_detects_absence_agent():
     agent = MainAgent()
     result = agent.detect_agent("Het ziekteverzuim loopt op")
     assert result is agent.absence
+
+
+def test_detects_workflow_agent():
+    agent = MainAgent()
+    result = agent.detect_agent("workflow stappen")
+    assert result is agent.workflow

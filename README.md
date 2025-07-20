@@ -10,6 +10,7 @@ Agents/
   Analysisagent/    - generieke bestand‑ en SPP‑analyses
   CSagent/          - feedback en gebruiksregistratie
   Legalagent/       - juridische controles
+  Workflowagent/    - stapsgewijze aansturing van andere agents
 utils/              - hulpfuncties voor opslag van feedback en logs
 main.py             - definieert alle API‑routes
 agents.py           - installeert de bovengenoemde agents
@@ -30,6 +31,9 @@ De `MainAgent` in `agents.py` bundelt de afzonderlijke agents en wordt gebruikt 
    - Resultaten kunnen als JSON, Excel of CSV worden teruggegeven.
 4. **FeedbackAgent** (`Agents/CSagent/`)
    - Slaat feedback op en registreert gebruiksacties. Alleen de beheerder mag deze routes aanroepen.
+5. **WorkflowAgent** (`Agents/Workflowagent/`)
+   - Voert een lijst stappen uit en kiest per stap automatisch de meest geschikte agent.
+   - Resultaat is een overzicht van alle uitgevoerde acties per stap.
 
 ## API‑endpoints
 

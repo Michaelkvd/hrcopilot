@@ -37,6 +37,7 @@ from Agents.Absenceagent.verzuim import (
     TRIGGERS as ABSENCE_TRIGGERS,
     match_terms as absence_match,
 )
+from Agents.Workflowagent.workflow import WorkflowAgent, TRIGGERS as WORKFLOW_TRIGGERS
 
 
 class AbsenceAgent(BaseAgent):
@@ -217,7 +218,14 @@ class MainAgent:
         self.legal = LegalAgent(self)
         self.analysis = AnalysisAgent(self)
         self.feedback = FeedbackAgent(self)
-        self.agents = [self.legal, self.absence, self.analysis, self.feedback]
+        self.workflow = WorkflowAgent(self)
+        self.agents = [
+            self.legal,
+            self.absence,
+            self.analysis,
+            self.feedback,
+            self.workflow,
+        ]
 
     def detect_agent(self, text: str) -> Optional[BaseAgent]:
         """Kies een agent op basis van semantische triggers."""
