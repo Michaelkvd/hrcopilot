@@ -19,3 +19,10 @@ def test_auto_route_no_match():
     response = client.post("/auto/", data={"text": "geen relevantie"})
     assert response.status_code == 200
     assert response.json()["status"] == "geen match"
+
+
+def test_auto_route_compliance_agent():
+    response = client.post("/auto/", data={"text": "Controleer het privacybeleid volgens de AVG"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "compliance" in data
