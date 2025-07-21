@@ -1,8 +1,0 @@
-.                                                                        [100%]
-=============================== warnings summary ===============================
-../../root/.pyenv/versions/3.11.12/lib/python3.11/site-packages/starlette/formparsers.py:10
-  /root/.pyenv/versions/3.11.12/lib/python3.11/site-packages/starlette/formparsers.py:10: PendingDeprecationWarning: Please use `import python_multipart` instead.
-    import multipart
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-1 passed, 1 warning in 0.72s
