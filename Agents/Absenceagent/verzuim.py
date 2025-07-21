@@ -1,7 +1,7 @@
 """Functies voor het behandelen van verzuimcasuïstiek en vragen."""
 from typing import Optional
 
-from utils import text_matches
+from utils import text_matches, format_payload
 
 # Kernwoorden die semantisch gerelateerd zijn aan verzuim. Worden gebruikt om
 # te bepalen of deze module relevant is voor een binnengekomen vraag.
@@ -42,3 +42,26 @@ def analyse_tekst(text: str, periode: Optional[str] = None) -> dict:
 
     contents = text.encode()
     return analysis_mod.analyse_verzuim("tekst-input", contents, periode=periode)
+
+
+def advies_niveaus(vraag: str, dossier: Optional[str] = None) -> dict:
+    """Geef advies op operationeel, tactisch en strategisch niveau."""
+
+    basis = beantwoord_vraag(vraag, dossier)
+    return {
+        "operationeel": basis,
+        "tactisch": (
+            "Analyseer verzuimpatronen, stem af met leidinggevenden en stuur bij "
+            "waar nodig."
+        ),
+        "strategisch": (
+            "Koppel verzuimcijfers aan bedrijfsdoelen en ontwikkel preventief beleid."
+        ),
+    }
+
+
+def n8n_payload(vraag: str, dossier: Optional[str] = None) -> dict:
+    """Retourneer een n8n-geschikte payload met adviesniveaus."""
+
+    data = advies_niveaus(vraag, dossier)
+    return format_payload("verzuim", data)

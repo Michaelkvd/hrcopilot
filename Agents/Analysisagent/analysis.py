@@ -1,6 +1,6 @@
 from fastapi import UploadFile
 from typing import Iterable, List, Tuple, Optional, Dict
-from utils import text_matches
+from utils import text_matches, format_payload
 import pandas as pd
 from io import BytesIO, StringIO
 from datetime import datetime
@@ -67,6 +67,7 @@ def analyse_bestand(file: UploadFile, vraag: str) -> dict:
         "risico": risico,
         "scenario": scenario,
         "aanbevelingen": aanbevelingen,
+        "niveaus": advies_niveaus(risico),
         "disclaimer": ANALYSE_DISCLAIMER,
     }
 
@@ -132,6 +133,22 @@ def genereer_aanbevelingen(risico: str) -> str:
     return f"Mogelijke vervolgstappen: {adviezen}"
 
 
+def advies_niveaus(risico: str) -> Dict[str, str]:
+    """Geef advies op meerdere niveaus voor het opgegeven risiconiveau."""
+
+    return {
+        "operationeel": (
+            "Controleer de datakwaliteit en leg afwijkingen direct vast."
+        ),
+        "tactisch": (
+            f"Gebruik de analyse om processen te verbeteren bij een {risico} risico."
+        ),
+        "strategisch": (
+            "Zet datagedreven inzichten om in beleid voor de lange termijn."
+        ),
+    }
+
+
 def haal_branchenorm(periode: str | None = None) -> dict:
     """Simuleer een algemene branchenorm zonder specifieke codes."""
 
@@ -172,6 +189,7 @@ def analyse_verzuim(
         "risico": risico,
         "advies": advies,
         "beleidsadvies": beleidsadvies,
+        "niveaus": advies_niveaus(risico),
         "resultaat": "Analyse nog niet geïmplementeerd",
         "disclaimer": ANALYSE_DISCLAIMER,
     }
@@ -308,6 +326,7 @@ def analyse_spp(file: Optional[UploadFile] = None, text: Optional[str] = None) -
         "risico": risico,
         "acties": acties,
         "adviezen": adviezen,
+        "niveaus": advies_niveaus(risico),
         "disclaimer": ANALYSE_DISCLAIMER,
     }
 
@@ -325,3 +344,9 @@ def genereer_spp_rapport(data: Dict, formaat: str = "excel") -> BytesIO:
 
 def log_spp(user: str, actie: str):
     append_row(LOG_FILE, [user, actie])
+
+
+def n8n_payload(data: Dict) -> Dict:
+    """Return an n8n friendly payload for analysis resultaten."""
+
+    return format_payload("analysis", data)

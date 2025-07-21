@@ -1,6 +1,6 @@
 from fastapi import UploadFile
 from typing import Optional
-from utils import text_matches
+from utils import text_matches, format_payload
 from io import BytesIO
 import pandas as pd
 import extract_msg
@@ -76,6 +76,16 @@ def detect_pii(text: str) -> list[str]:
     return list(set(emails + numbers))
 
 
+def advies_niveaus(status: str) -> dict:
+    """Geef advies op operationeel, tactisch en strategisch niveau."""
+
+    return {
+        "operationeel": "Controleer direct op mogelijke datalekken en corrigeer documenten.",
+        "tactisch": "Borg naleving van interne privacyprocedures en train medewerkers.",
+        "strategisch": "Veranker privacy- en beveiligingsbeleid in de bedrijfsstrategie.",
+    }
+
+
 def compliance_check(file: Optional[UploadFile] = None, text: Optional[str] = None) -> dict:
     content = extract_text(file=file, text=text)
     if not content:
@@ -90,4 +100,12 @@ def compliance_check(file: Optional[UploadFile] = None, text: Optional[str] = No
         "gevonden_termen": hits,
         "gevonden_pii": pii,
         "advies": advies,
+        "niveaus": advies_niveaus(status),
     }
+
+
+def n8n_payload(file: Optional[UploadFile] = None, text: Optional[str] = None) -> dict:
+    """Retourneer een n8n-vriendelijk payloadresultaat."""
+
+    data = compliance_check(file=file, text=text)
+    return format_payload("compliance", data)
