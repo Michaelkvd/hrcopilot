@@ -1,7 +1,7 @@
 
 from fastapi import UploadFile
 from typing import List, Optional, Tuple
-from utils import text_matches
+from utils import text_matches, format_payload
 import tempfile
 import os
 import extract_msg
@@ -259,6 +259,20 @@ def generate_legal_advice(
     vragen = genereer_vragen(kernwoorden, juridische_begrippen)
     return advies, actieplan, vragen, risico
 
+
+def advies_niveaus(complexiteit: str) -> dict:
+    """Advies op operationeel, tactisch en strategisch niveau."""
+
+    return {
+        "operationeel": "Controleer dossier en zorg voor juiste documentatie.",
+        "tactisch": (
+            "Weeg belangen zorgvuldig af en betrek tijdig interne specialisten."
+        ),
+        "strategisch": (
+            "Borg dat het juridische kader aansluit bij het HR-beleid en toekomstplannen."
+        ),
+    }
+
 def legalcheck(
     file: Optional[UploadFile] = None,
     input_text: Optional[str] = None,
@@ -312,6 +326,14 @@ def legalcheck(
         "bronnen": bronnen,
         "verdiepende_vragen": vragen,
         "risico": risico,
+        "niveaus": advies_niveaus(complexiteit),
         "legal_markdown": markdown,
         "disclaimer": LEGAL_DISCLAIMER,
     }
+
+
+def n8n_payload(file: Optional[UploadFile] = None, text: Optional[str] = None, intern_beleid: Optional[str] = None) -> dict:
+    """Retourneer een n8n-geschikte payload voor juridische checks."""
+
+    data = legalcheck(file=file, input_text=text, intern_beleid=intern_beleid)
+    return format_payload("legal", data)
